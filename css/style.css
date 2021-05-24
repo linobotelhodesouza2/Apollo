@@ -48,7 +48,10 @@ body{
 .box td .corte{
     border-radius: 6px;
 }
-
-
+.principal{
+    text-align: center;
+    margin-top: 20%;
+    
+}
 
  
