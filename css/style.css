@@ -53,5 +53,8 @@ body{
     margin-top: 20%;
     
 }
-
- 
+@media screen and (min-width: 430px){
+    .principal h1{
+        size: 10px;
+    }
+ }
