@@ -1,17 +1,24 @@
             var ArrayTipo = new Array ("");
-            var ArrayTipo1 = new Array ("92");
-            var ArrayTipo2 = new Array ("92");
-            var ArrayTipo3 = new Array ("85");
-            var ArrayTipo4 = new Array ("90");
-            var ArrayTipo5 = new Array ("96.5");
-            var ArrayTipo6 = new Array ("86");
-            var ArrayTipo7 = new Array ("85.7");
-            var ArrayTipo8 = new Array ("79");
-            var ArrayTipo9 = new Array ("84");
-            var ArrayTipo10 = new Array ("66.5");
-            var ArrayTipo11 = new Array ("76");
-            var ArrayTipo12 = new Array ("78.8");
-            var ArrayTipo13 = new Array ("75");
+            var ArrayTipo1 = new Array ("151.7");
+            var ArrayTipo2 = new Array ("97.8");
+            var ArrayTipo3 = new Array ("91");
+            var ArrayTipo4 = new Array ("81");
+            var ArrayTipo5 = new Array ("75");
+            var ArrayTipo6 = new Array ("85");
+            var ArrayTipo7 = new Array ("92");
+            var ArrayTipo8 = new Array ("78");
+            var ArrayTipo9 = new Array ("77");
+            var ArrayTipo10 = new Array ("79");
+            var ArrayTipo11 = new Array ("76.3");
+            var ArrayTipo12 = new Array ("73");
+            var ArrayTipo13 = new Array ("79");
+            var ArrayTipo14 = new Array ("64.5");
+            var ArrayTipo15 = new Array ("66.9");
+            var ArrayTipo16 = new Array ("60");
+            var ArrayTipo17 = new Array ("64.4");
+            var ArrayTipo18 = new Array ("64.7");
+            var ArrayTipo19 = new Array ("63");
+            var ArrayTipo20 = new Array ("59.8");
 
             function PopulaCombo(id_tipo)
             {
@@ -41,6 +48,20 @@
                     ArrayTipo = ArrayTipo12;
                 else if (id_tipo == 13)
                     ArrayTipo = ArrayTipo13;
+                else if (id_tipo == 14)
+                    ArrayTipo = ArrayTipo14;
+                else if (id_tipo == 15)
+                    ArrayTipo = ArrayTipo15;
+                else if (id_tipo == 16)
+                    ArrayTipo = ArrayTipo16;
+                else if (id_tipo == 17)
+                    ArrayTipo = ArrayTipo17;
+                else if (id_tipo == 18)
+                    ArrayTipo = ArrayTipo18;
+                else if (id_tipo == 19)
+                    ArrayTipo = ArrayTipo19;
+                else if (id_tipo == 20)
+                    ArrayTipo = ArrayTipo20;
                 else
                 {
                     Remove();
