@@ -1,24 +1,24 @@
             var ArrayTipo = new Array ("");
-            var ArrayTipo1 = new Array ("151.7");
-            var ArrayTipo2 = new Array ("97.8");
-            var ArrayTipo3 = new Array ("91");
-            var ArrayTipo4 = new Array ("81");
-            var ArrayTipo5 = new Array ("75");
-            var ArrayTipo6 = new Array ("85");
-            var ArrayTipo7 = new Array ("92");
-            var ArrayTipo8 = new Array ("78");
-            var ArrayTipo9 = new Array ("77");
-            var ArrayTipo10 = new Array ("79");
-            var ArrayTipo11 = new Array ("76.3");
-            var ArrayTipo12 = new Array ("73");
-            var ArrayTipo13 = new Array ("79");
-            var ArrayTipo14 = new Array ("64.5");
-            var ArrayTipo15 = new Array ("66.9");
-            var ArrayTipo16 = new Array ("60");
-            var ArrayTipo17 = new Array ("64.4");
-            var ArrayTipo18 = new Array ("64.7");
-            var ArrayTipo19 = new Array ("63");
-            var ArrayTipo20 = new Array ("59.8");
+            var ArrayTipo1 = new Array ("186,7");
+            var ArrayTipo2 = new Array ("1328");
+            var ArrayTipo3 = new Array ("126");
+            var ArrayTipo4 = new Array ("116");
+            var ArrayTipo5 = new Array ("110");
+            var ArrayTipo6 = new Array ("120");
+            var ArrayTipo7 = new Array ("127");
+            var ArrayTipo8 = new Array ("113");
+            var ArrayTipo9 = new Array ("112");
+            var ArrayTipo10 = new Array ("114");
+            var ArrayTipo11 = new Array ("111,3");
+            var ArrayTipo12 = new Array ("108");
+            var ArrayTipo13 = new Array ("114");
+            var ArrayTipo14 = new Array ("99.5");
+            var ArrayTipo15 = new Array ("101.9");
+            var ArrayTipo16 = new Array ("95");
+            var ArrayTipo17 = new Array ("99.4");
+            var ArrayTipo18 = new Array ("99.7");
+            var ArrayTipo19 = new Array ("98");
+            var ArrayTipo20 = new Array ("94.8");
 
             function PopulaCombo(id_tipo)
             {
