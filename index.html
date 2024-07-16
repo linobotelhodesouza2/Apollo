@@ -17,7 +17,7 @@
         }
         .container {
             max-width: 800px;
-            background-color: rgba(255, 255, 255, 0.8); /* Fundo branco semi-transparente */
+            background-color: rgba(255, 255, 255, 0.8);
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
@@ -44,10 +44,12 @@
         .comentario-body {
             margin-top: 5px;
         }
-        .comentario-delete, .comentario-edit {
+        .comentario-delete, .comentario-edit, .comentario-visibility {
             cursor: pointer;
-            color: red;
             margin-left: 10px;
+        }
+        .comentario-delete {
+            color: red;
         }
         .form-row {
             display: flex;
@@ -70,7 +72,7 @@
 </head>
 <body>
     <div class="container">
-        <h2 class="mb-4 title-centered">Produtos</h2>
+        <h2 class="mb-4 title-centered">Lino teste</h2>
         <form id="productForm">
             <div class="form-group">
                 <label for="produto">Produto</label>
@@ -117,7 +119,6 @@
 
     <div class="container" id="adminArea" style="display:none;">
         <h2 class="mb-4 title-centered">Administração</h2>
-        <!-- Área de administração para editar ou excluir comentários -->
         <div id="comentariosAdmin" class="mt-3"></div>
     </div>
 
@@ -125,7 +126,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
 
     <script>
-        // Configuração do Firebase
         var firebaseConfig = {
             apiKey: "AIzaSyA2t1UP-9F3qKvgdfFdLL7L13S",
             authDomain: "myapp1-7da01.firebaseapp.com",
@@ -138,8 +138,7 @@
         firebase.initializeApp(firebaseConfig);
         var database = firebase.database();
 
-        // Identificar se o usuário é administrador ou geral
-        var isAdmin = false; // Ajustar para true se o usuário for administrador
+        var isAdmin = false;
 
         var senha = prompt("Digite a senha de administrador para acessar a área de administração:");
         if (senha === "123") {
@@ -184,7 +183,8 @@
                 if (comentario) {
                     produtoData.comentarios.push({
                         data: new Date().toLocaleString(),
-                        texto: comentario
+                        texto: comentario,
+                        visivel: true
                     });
                 }
 
@@ -224,8 +224,8 @@
 
                     document.getElementById('produto').value = produto;
                     document.getElementById('perimetro').value = data.perimetro || '';
-                    document.getElementById('corte').value = ''; // Não preencher automaticamente
-                    document.getElementById('velocidade').value = ''; // Não preencher automaticamente
+                    document.getElementById('corte').value = '';
+                    document.getElementById('velocidade').value = '';
                     document.getElementById('chagrim').value = data.chagrim || 'Não';
                     document.getElementById('comentario').value = '';
 
@@ -241,27 +241,51 @@
                     if (data.comentarios) {
                         var comentarios = data.comentarios;
                         comentarios.forEach(function(comentario, index) {
-                            var div = document.createElement('div');
-                            div.classList.add('comentario-item');
-                            div.innerHTML = `
-                                <div class="comentario-header">
-                                    <span class="date">${comentario.data}</span>
-                                    ${isAdmin ? `<span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>` : ''}
-                                </div>
-                                <div class="comentario-body">${comentario.texto}</div>
-                            `;
-                            dadosProduto.appendChild(div);
+                            if (comentario.visivel || isAdmin) {
+                                var div = document.createElement('div');
+                                div.classList.add('comentario-item');
+                                div.innerHTML = `
+                                    <div class="comentario-header">
+                                        <span class="date">${comentario.data}</span>
+                                        ${isAdmin ? `
+                                        <span class="comentario-visibility" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
+                                            ${comentario.visivel ? '👁️' : '👁️‍🗨️'}
+                                        </span>
+                                        <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>` : ''}
+                                    </div>
+                                    <div class="comentario-body">${comentario.texto}</div>
+                                `;
+                                dadosProduto.appendChild(div);
+                            }
                         });
                     }
                 });
             } else {
                 document.getElementById('dadosProduto').innerHTML = '';
-                document.getElementById('productForm').reset(); // Limpa o formulário
+                document.getElementById('productForm').reset();
             }
 
             if (isAdmin) {
                 atualizarComentariosAdmin(produto);
             }
+        }
+
+        function alternarVisibilidadeComentario(produto, index) {
+            var produtoRef = database.ref('produtos/' + produto);
+            produtoRef.once('value', function(snapshot) {
+                var data = snapshot.val();
+                if (data && data.comentarios) {
+                    data.comentarios[index].visivel = !data.comentarios[index].visivel;
+                    produtoRef.set(data, function(error) {
+                        if (!error) {
+                            alert('Visibilidade do comentário alterada com sucesso!');
+                            mostrarDadosSalvos();
+                        } else {
+                            alert('Erro ao alterar a visibilidade do comentário.');
+                        }
+                    });
+                }
+            });
         }
 
         function excluirComentario(produto, index) {
@@ -320,6 +344,9 @@
                         div.innerHTML = `
                             <div class="comentario-header">
                                 <span class="date">${comentario.data}</span>
+                                <span class="comentario-visibility" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
+                                    ${comentario.visivel ? '👁️' : '👁️‍🗨️'}
+                                </span>
                                 <span class="comentario-edit" onclick="editarComentario('${produto}', ${index})">Editar</span>
                                 <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>
                             </div>
