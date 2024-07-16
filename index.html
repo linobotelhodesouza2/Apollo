@@ -68,18 +68,19 @@
         .title-centered {
             text-align: center;
         }
-        /* Adicionando animação para o ícone do olho */
         .comentario-visibility {
-            transition: transform 0.3s ease-out;
+            font-size: 1.2em;
+            transition: color 0.3s ease-in-out;
+            cursor: pointer;
         }
-        .comentario-visibility.closed {
-            transform: rotate(45deg);
+        .comentario-visibility.invisible {
+            color: #aaa;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2 class="mb-4 title-centered">Produ</h2>
+        <h2 class="mb-4 title-centered">Produtos</h2>
         <form id="productForm">
             <div class="form-group">
                 <label for="produto">Produto</label>
@@ -222,19 +223,21 @@
 
         function mostrarDadosSalvos() {
             var produto = document.getElementById('produtosSalvos').value;
+            var dadosProduto = document.getElementById('dadosProduto');
+            dadosProduto.innerHTML = '';
+
             if (produto) {
                 var produtoRef = database.ref('produtos/' + produto);
                 produtoRef.once('value', function(snapshot) {
                     var data = snapshot.val();
-                    var dadosProduto = document.getElementById('dadosProduto');
-                    dadosProduto.innerHTML = '';
                     if (data) {
+                        var HTML = '';
+
                         document.getElementById('produto').value = produto;
                         document.getElementById('perimetro').value = data.perimetro || '';
-                        document.getElementById('corte').value = data.corte || '';
-                        document.getElementById('velocidade').value = data.velocidade || '';
+                        document.getElementById('corte').value = '';
+                        document.getElementById('velocidade').value = '';
                         document.getElementById('chagrim').value = data.chagrim || 'Não';
-                        document.getElementById('repeticao').value = data.repeticao || '';
                         document.getElementById('comentario').value = '';
 
                         for (var key in data) {
@@ -256,8 +259,8 @@
                                         <div class="comentario-header">
                                             <span class="date">${comentario.data}</span>
                                             ${isAdmin ? `
-                                            <span class="comentario-visibility ${comentario.visivel ? '' : 'closed'}" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
-                                                👁️
+                                            <span class="comentario-visibility ${comentario.visivel ? '' : 'invisible'}" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
+                                                ${comentario.visivel ? '👁️' : '👁️‍🗨️'}
                                             </span>
                                             <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>` : ''}
                                         </div>
@@ -353,8 +356,8 @@
                         div.innerHTML = `
                             <div class="comentario-header">
                                 <span class="date">${comentario.data}</span>
-                                <span class="comentario-visibility ${comentario.visivel ? '' : 'closed'}" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
-                                    👁️
+                                <span class="comentario-visibility ${comentario.visivel ? '' : 'invisible'}" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
+                                    ${comentario.visivel ? '👁️' : '👁️‍🗨️'}
                                 </span>
                                 <span class="comentario-edit" onclick="editarComentario('${produto}', ${index})">Editar</span>
                                 <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>
