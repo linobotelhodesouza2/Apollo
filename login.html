@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>APOLLO 1.0</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 20px;
+            padding: 20px;
+            background-image: url('https://i.pinimg.com/736x/01/22/d9/0122d95177d733f1dabd36acca11fef5.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            background-color: rgba(255, 255, 255, 0.8); /* Fundo branco semi-transparente */
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        #dadosProduto {
+            margin-top: 20px;
+        }
+        .comentario-item {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+        }
+        .comentario-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .comentario-header .date {
+            font-size: 0.9em;
+            color: #888;
+        }
+        .comentario-body {
+            margin-top: 5px;
+        }
+        .comentario-delete, .comentario-edit {
+            cursor: pointer;
+            color: red;
+            margin-left: 10px;
+        }
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+        }
+        .form-row .form-group {
+            flex: 1;
+            margin-right: 10px;
+        }
+        .form-row .form-group:last-child {
+            margin-right: 0;
+        }
+        .form-control {
+            max-width: none;
+        }
+        .title-centered {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="mb-4 title-centered">Lino</h2>
+        <form id="productForm">
+            <div class="form-group">
+                <label for="produto">Produto</label>
+                <input type="text" class="form-control" id="produto" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="perimetro">Perímetro</label>
+                    <input type="number" class="form-control" id="perimetro" maxlength="5">
+                </div>
+                <div class="form-group">
+                    <label for="corte">Corte</label>
+                    <input type="text" class="form-control" id="corte" required maxlength="5">
+                </div>
+                <div class="form-group">
+                    <label for="chagrim">Chagrim</label>
+                    <select class="form-control" id="chagrim">
+                        <option value="Sim">Sim</option>
+                        <option value="Não">Não</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="repeticao">Repetição</label>
+                    <input type="number" class="form-control" id="repeticao" maxlength="5">
+                </div>
+                <div class="form-group">
+                    <label for="velocidade">Velocidade</label>
+                    <input type="number" class="form-control" id="velocidade" required maxlength="5">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="comentario">Comentário</label>
+                <input type="text" class="form-control" id="comentario">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Salvar</button>
+        </form>
+        <select id="produtosSalvos" class="form-control mt-3">
+            <option value="">Selecione um produto salvo</option>
+        </select>
+        <div id="dadosProduto" class="mt-3"></div>
+    </div>
+
+    <div class="container" id="adminArea" style="display:none;">
+        <h2 class="mb-4 title-centered">Administração</h2>
+        <!-- Área de administração para editar ou excluir comentários -->
+        <div id="comentariosAdmin" class="mt-3"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
+
+    <script>
+        // Configuração do Firebase
+        var firebaseConfig = {
+            apiKey: "AIzaSyA2t1UP-9F3qKvgdfFdLL7L13S",
+            authDomain: "myapp1-7da01.firebaseapp.com",
+            databaseURL: "https://myapp1-7da01-default-rtdb.firebaseio.com",
+            projectId: "myapp1-7da01",
+            storageBucket: "myapp1-7da01.appspot.com",
+            messagingSenderId: "41171031400",
+            appId: "1:41171031400:web:ac785147dab508e21072dd"
+        };
+        firebase.initializeApp(firebaseConfig);
+        var database = firebase.database();
+
+        // Identificar se o usuário é administrador ou geral
+        var isAdmin = false; // Ajustar para true se o usuário for administrador
+
+        function salvarDados(e) {
+            e.preventDefault();
+            var produto = document.getElementById('produto').value.toUpperCase();
+            var perimetro = document.getElementById('perimetro').value;
+            var corte = document.getElementById('corte').value.toUpperCase();
+            var velocidade = document.getElementById('velocidade').value;
+            var repeticao = document.getElementById('repeticao').value;
+            var chagrim = document.getElementById('chagrim').value;
+            var comentario = document.getElementById('comentario').value;
+
+            if (!produto || !corte || !velocidade) {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+                return;
+            }
+
+            var produtoRef = database.ref('produtos/' + produto);
+            produtoRef.once('value', function(snapshot) {
+                var produtoData = snapshot.val() || {};
+                produtoData.perimetro = perimetro;
+                produtoData.corte = corte;
+                produtoData.velocidade = velocidade;
+                produtoData.repeticao = repeticao;
+                produtoData.chagrim = chagrim;
+
+                if (comentario) {
+                    if (!produtoData.comentarios) {
+                        produtoData.comentarios = [];
+                    }
+                    produtoData.comentarios.unshift({
+                        texto: comentario,
+                        data: new Date().toLocaleString()
+                    });
+                }
+
+                produtoRef.set(produtoData, function(error) {
+                    if (!error) {
+                        alert('Dados salvos com sucesso!');
+                        document.getElementById('productForm').reset();
+                        atualizarListaProdutos();
+                    } else {
+                        alert('Erro ao salvar os dados.');
+                    }
+                });
+            });
+        }
+
+        function atualizarListaProdutos() {
+            var produtosSalvos = document.getElementById('produtosSalvos');
+            produtosSalvos.innerHTML = '<option value="">Selecione um produto salvo</option>';
+
+            database.ref('produtos').once('value', function(snapshot) {
+                snapshot.forEach(function(childSnapshot) {
+                    var produto = childSnapshot.key;
+                    var option = document.createElement('option');
+                    option.value = produto;
+                    option.text = produto;
+                    produtosSalvos.appendChild(option);
+                });
+            });
+        }
+
+        function mostrarDadosSalvos() {
+            var produto = document.getElementById('produtosSalvos').value;
+            if (produto) {
+                var produtoRef = database.ref('produtos/' + produto);
+                produtoRef.once('value', function(snapshot) {
+                    var dadosProduto = document.getElementById('dadosProduto');
+                    dadosProduto.innerHTML = '';
+
+                    var data = snapshot.val();
+                    document.getElementById('produto').value = produto; // Preenche o campo produto
+                    document.getElementById('perimetro').value = data.perimetro || '';
+                    document.getElementById('corte').value = ''; // Não preencher automaticamente
+                    document.getElementById('repeticao').value = data.repeticao || '';
+                    document.getElementById('velocidade').value = ''; // Não preencher automaticamente
+                    document.getElementById('chagrim').value = data.chagrim || 'Não';
+                    document.getElementById('comentario').value = '';
+
+                    for (var key in data) {
+                        if (data.hasOwnProperty(key) && key !== 'comentarios') {
+                            var div = document.createElement('div');
+                            div.classList.add('dados-item');
+                            div.innerHTML = `<strong>${key}:</strong> ${data[key]}`;
+                            dadosProduto.appendChild(div);
+                        }
+                    }
+
+                    if (data.comentarios) {
+                        var comentarios = data.comentarios;
+                        comentarios.forEach(function(comentario, index) {
+                            var div = document.createElement('div');
+                            div.classList.add('comentario-item');
+                            div.innerHTML = `
+                                <div class="comentario-header">
+                                    <span class="date">${comentario.data}</span>
+                                    ${isAdmin ? `<span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>` : ''}
+                                </div>
+                                <div class="comentario-body">${comentario.texto}</div>
+                            `;
+                            dadosProduto.appendChild(div);
+                        });
+                    }
+                });
+            } else {
+                document.getElementById('dadosProduto').innerHTML = '';
+                document.getElementById('productForm').reset(); // Limpa o formulário
+            }
+        }
+
+        function excluirComentario(produto, index) {
+            var produtoRef = database.ref('produtos/' + produto);
+            produtoRef.once('value', function(snapshot) {
+                var data = snapshot.val();
+                if (data && data.comentarios) {
+                    data.comentarios.splice(index, 1);
+                    produtoRef.set(data, function(error) {
+                        if (!error) {
+                            alert('Comentário excluído com sucesso!');
+                            mostrarDadosSalvos();
+                        } else {
+                            alert('Erro ao excluir o comentário.');
+                        }
+                    });
+                }
+            });
+        }
+
+        function editarComentario(produto, index) {
+            var comentarioEdit = prompt('Digite o novo texto do comentário:');
+            if (comentarioEdit !== null) {
+                var produtoRef = database.ref('produtos/' + produto);
+                produtoRef.once('value', function(snapshot) {
+                    var data = snapshot.val();
+                    if (data && data.comentarios) {
+                        data.comentarios[index].texto = comentarioEdit;
+                        produtoRef.set(data, function(error) {
+                            if (!error) {
+                                alert('Comentário editado com sucesso!');
+                                mostrarDadosSalvos();
+                            } else {
+                                alert('Erro ao editar o comentário.');
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        function atualizarComentariosAdmin() {
+            var comentariosAdmin = document.getElementById('comentariosAdmin');
+            comentariosAdmin.innerHTML = '';
+
+            database.ref('produtos').once('value', function(snapshot) {
+                snapshot.forEach(function(childSnapshot) {
+                    var produto = childSnapshot.key;
+                    var data = childSnapshot.val();
+
+                    if (data.comentarios) {
+                        var comentarios = data.comentarios;
+                        comentarios.forEach(function(comentario, index) {
+                            var div = document.createElement('div');
+                            div.classList.add('comentario-item');
+                            div.innerHTML = `
+                                <div class="comentario-header">
+                                    <span class="date">${comentario.data}</span>
+                                    <span class="comentario-edit" onclick="editarComentario('${produto}', ${index})">Editar</span>
+                                    <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>
+                                </div>
+                                <div class="comentario-body">${comentario.texto}</div>
+                            `;
+                            comentariosAdmin.appendChild(div);
+                        });
+                    }
+                });
+            });
+        }
+
+        document.getElementById('productForm').addEventListener('submit', salvarDados);
+        document.getElementById('produtosSalvos').addEventListener('change', mostrarDadosSalvos);
+
+        atualizarListaProdutos();
+
+        // Exibir área de administração se o usuário for administrador
+        if (isAdmin) {
+            document.getElementById('adminArea').style.display = 'block';
+            atualizarComentariosAdmin();
+        }
+    </script>
+</body>
+</html>
