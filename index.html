@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>APOLLO 1.0</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         body {
             margin: 20px;
@@ -69,20 +68,18 @@
         .title-centered {
             text-align: center;
         }
+        /* Adicionando animação para o ícone do olho */
         .comentario-visibility {
-            transition: transform 0.2s;
+            transition: transform 0.3s ease-out;
         }
         .comentario-visibility.closed {
-            transform: scale(0);
-        }
-        .comentario-visibility.open {
-            transform: scale(1);
+            transform: rotate(45deg);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2 class="mb-4 title-centered">Produtos</h2>
+        <h2 class="mb-4 title-centered">Produ</h2>
         <form id="productForm">
             <div class="form-group">
                 <label for="produto">Produto</label>
@@ -231,43 +228,45 @@
                     var data = snapshot.val();
                     var dadosProduto = document.getElementById('dadosProduto');
                     dadosProduto.innerHTML = '';
+                    if (data) {
+                        document.getElementById('produto').value = produto;
+                        document.getElementById('perimetro').value = data.perimetro || '';
+                        document.getElementById('corte').value = data.corte || '';
+                        document.getElementById('velocidade').value = data.velocidade || '';
+                        document.getElementById('chagrim').value = data.chagrim || 'Não';
+                        document.getElementById('repeticao').value = data.repeticao || '';
+                        document.getElementById('comentario').value = '';
 
-                    document.getElementById('produto').value = produto;
-                    document.getElementById('perimetro').value = data.perimetro || '';
-                    document.getElementById('corte').value = '';
-                    document.getElementById('velocidade').value = '';
-                    document.getElementById('chagrim').value = data.chagrim || 'Não';
-                    document.getElementById('comentario').value = '';
-
-                    for (var key in data) {
-                        if (data.hasOwnProperty(key) && key !== 'comentarios') {
-                            var div = document.createElement('div');
-                            div.classList.add('dados-item');
-                            div.innerHTML = `<strong>${key}:</strong> ${data[key]}`;
-                            dadosProduto.appendChild(div);
-                        }
-                    }
-
-                    if (data.comentarios) {
-                        var comentarios = data.comentarios;
-                        comentarios.forEach(function(comentario, index) {
-                            if (comentario.visivel || isAdmin) {
+                        for (var key in data) {
+                            if (data.hasOwnProperty(key) && key !== 'comentarios') {
                                 var div = document.createElement('div');
-                                div.classList.add('comentario-item');
-                                div.innerHTML = `
-                                    <div class="comentario-header">
-                                        <span class="date">${comentario.data}</span>
-                                        ${isAdmin ? `
-                                        <span class="comentario-visibility ${comentario.visivel ? 'open' : 'closed'}" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
-                                            <i class="fas ${comentario.visivel ? 'fa-eye' : 'fa-eye-slash'}"></i>
-                                        </span>
-                                        <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>` : ''}
-                                    </div>
-                                    <div class="comentario-body">${comentario.texto}</div>
-                                `;
+                                div.classList.add('dados-item');
+                                div.innerHTML = `<strong>${key}:</strong> ${data[key]}`;
                                 dadosProduto.appendChild(div);
                             }
-                        });
+                        }
+
+                        if (data.comentarios) {
+                            var comentarios = data.comentarios;
+                            comentarios.forEach(function(comentario, index) {
+                                if (comentario.visivel || isAdmin) {
+                                    var div = document.createElement('div');
+                                    div.classList.add('comentario-item');
+                                    div.innerHTML = `
+                                        <div class="comentario-header">
+                                            <span class="date">${comentario.data}</span>
+                                            ${isAdmin ? `
+                                            <span class="comentario-visibility ${comentario.visivel ? '' : 'closed'}" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
+                                                👁️
+                                            </span>
+                                            <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>` : ''}
+                                        </div>
+                                        <div class="comentario-body">${comentario.texto}</div>
+                                    `;
+                                    dadosProduto.appendChild(div);
+                                }
+                            });
+                        }
                     }
                 });
             } else {
@@ -354,8 +353,8 @@
                         div.innerHTML = `
                             <div class="comentario-header">
                                 <span class="date">${comentario.data}</span>
-                                <span class="comentario-visibility ${comentario.visivel ? 'open' : 'closed'}" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
-                                    <i class="fas ${comentario.visivel ? 'fa-eye' : 'fa-eye-slash'}"></i>
+                                <span class="comentario-visibility ${comentario.visivel ? '' : 'closed'}" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
+                                    👁️
                                 </span>
                                 <span class="comentario-edit" onclick="editarComentario('${produto}', ${index})">Editar</span>
                                 <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>
