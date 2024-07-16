@@ -70,7 +70,7 @@
 </head>
 <body>
     <div class="container">
-        <h2 class="mb-4 title-centered">teste</h2>
+        <h2 class="mb-4 title-centered">Produtos</h2>
         <form id="productForm">
             <div class="form-group">
                 <label for="produto">Produto</label>
@@ -151,7 +151,6 @@
         document.addEventListener("DOMContentLoaded", function() {
             if (isAdmin) {
                 document.getElementById('adminArea').style.display = 'block';
-                atualizarComentariosAdmin();
             }
         });
 
@@ -259,6 +258,10 @@
                 document.getElementById('dadosProduto').innerHTML = '';
                 document.getElementById('productForm').reset(); // Limpa o formulário
             }
+
+            if (isAdmin) {
+                atualizarComentariosAdmin(produto);
+            }
         }
 
         function excluirComentario(produto, index) {
@@ -300,32 +303,31 @@
             }
         }
 
-        function atualizarComentariosAdmin() {
+        function atualizarComentariosAdmin(produto) {
             var comentariosAdmin = document.getElementById('comentariosAdmin');
             comentariosAdmin.innerHTML = '';
 
-            database.ref('produtos').once('value', function(snapshot) {
-                snapshot.forEach(function(childSnapshot) {
-                    var produto = childSnapshot.key;
-                    var data = childSnapshot.val();
+            if (!produto) return;
 
-                    if (data.comentarios) {
-                        var comentarios = data.comentarios;
-                        comentarios.forEach(function(comentario, index) {
-                            var div = document.createElement('div');
-                            div.classList.add('comentario-item');
-                            div.innerHTML = `
-                                <div class="comentario-header">
-                                    <span class="date">${comentario.data}</span>
-                                    <span class="comentario-edit" onclick="editarComentario('${produto}', ${index})">Editar</span>
-                                    <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>
-                                </div>
-                                <div class="comentario-body">${comentario.texto}</div>
-                            `;
-                            comentariosAdmin.appendChild(div);
-                        });
-                    }
-                });
+            var produtoRef = database.ref('produtos/' + produto);
+            produtoRef.once('value', function(snapshot) {
+                var data = snapshot.val();
+                if (data && data.comentarios) {
+                    var comentarios = data.comentarios;
+                    comentarios.forEach(function(comentario, index) {
+                        var div = document.createElement('div');
+                        div.classList.add('comentario-item');
+                        div.innerHTML = `
+                            <div class="comentario-header">
+                                <span class="date">${comentario.data}</span>
+                                <span class="comentario-edit" onclick="editarComentario('${produto}', ${index})">Editar</span>
+                                <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>
+                            </div>
+                            <div class="comentario-body">${comentario.texto}</div>
+                        `;
+                        comentariosAdmin.appendChild(div);
+                    });
+                }
             });
         }
 
