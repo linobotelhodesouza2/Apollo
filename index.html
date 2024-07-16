@@ -72,7 +72,7 @@
 </head>
 <body>
     <div class="container">
-        <h2 class="mb-4 title-centered">Pro</h2>
+        <h2 class="mb-4 title-centered">Produtos</h2>
         <form id="productForm">
             <div class="form-group">
                 <label for="produto">Produto</label>
@@ -224,34 +224,19 @@
 
                     document.getElementById('produto').value = produto;
                     document.getElementById('perimetro').value = data.perimetro || '';
-                    document.getElementById('corte').value = '';
-                    document.getElementById('velocidade').value = '';
-                    document.getElementById('chagrim').value = data.chagrim || 'Não';
-                    document.getElementById('comentario').value = '';
-
-                    for (var key in data) {
-                        if (data.hasOwnProperty(key) && key !== 'comentarios') {
-                            var div = document.createElement('div');
-                            div.classList.add('dados-item');
-                            div.innerHTML = `<strong>${key}:</strong> ${data[key]}`;
-                            dadosProduto.appendChild(div);
-                        }
-                    }
-
-                    if (data.comentarios) {
-                        var comentarios = data.comentarios;
-                        comentarios.forEach(function(comentario, index) {
-                            if (comentario.visivel || isAdmin) {
+                    document.getElementById('corte').value = data.corte || '';
+                    document.getElementById('velocidade').value = data.velocidade || '';
+                    document.getElementById('repeticao').value = data.repeticao || '';
+                    document.getElementById('chagrim').value = data.chagrim || '';
+                    
+                    if (!isAdmin) {
+                        data.comentarios.forEach(function(comentario) {
+                            if (comentario.visivel) {
                                 var div = document.createElement('div');
                                 div.classList.add('comentario-item');
                                 div.innerHTML = `
                                     <div class="comentario-header">
                                         <span class="date">${comentario.data}</span>
-                                        ${isAdmin ? `
-                                        <span class="comentario-visibility" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
-                                            ${comentario.visivel ? '👁️' : '🔒'}
-                                        </span>
-                                        <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>` : ''}
                                     </div>
                                     <div class="comentario-body">${comentario.texto}</div>
                                 `;
@@ -259,14 +244,14 @@
                             }
                         });
                     }
+
+                    if (isAdmin) {
+                        atualizarComentariosAdmin(produto);
+                    }
                 });
             } else {
                 document.getElementById('dadosProduto').innerHTML = '';
                 document.getElementById('productForm').reset();
-            }
-
-            if (isAdmin) {
-                atualizarComentariosAdmin(produto);
             }
         }
 
