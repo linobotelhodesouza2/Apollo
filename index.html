@@ -71,22 +71,7 @@
     </style>
 </head>
 <body>
-    <div class="container" id="loginArea">
-        <h2 class="mb-4 title-centered">Login de Administrador</h2>
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" class="form-control" id="email" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Senha</label>
-                <input type="password" class="form-control" id="password" required>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">Login</button>
-        </form>
-    </div>
-
-    <div class="container" id="productArea" style="display:none;">
+    <div class="container">
         <h2 class="mb-4 title-centered">Produtos</h2>
         <form id="productForm">
             <div class="form-group">
@@ -96,7 +81,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="perimetro">Perímetro</label>
-                    <input type="number" class="form-control" id="perimetro" maxlength="5">
+                    <input type="text" class="form-control" id="perimetro" maxlength="5">
                 </div>
                 <div class="form-group">
                     <label for="corte">Corte</label>
@@ -138,7 +123,6 @@
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
 
     <script>
@@ -152,30 +136,21 @@
             appId: "1:41171031400:web:ac785147dab508e21072dd"
         };
         firebase.initializeApp(firebaseConfig);
-
         var database = firebase.database();
-        var auth = firebase.auth();
 
-        auth.onAuthStateChanged(function(user) {
-            if (user) {
-                document.getElementById('loginArea').style.display = 'none';
-                document.getElementById('productArea').style.display = 'block';
+        var isAdmin = false;
+
+        var senha = prompt("Digite a senha de administrador para acessar a área de administração:");
+        if (senha === "admin123") {
+            isAdmin = true;
+        } else {
+            alert("Acesso como usuário geral.");
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            if (isAdmin) {
                 document.getElementById('adminArea').style.display = 'block';
-                atualizarListaProdutos();
-            } else {
-                document.getElementById('loginArea').style.display = 'block';
-                document.getElementById('productArea').style.display = 'none';
-                document.getElementById('adminArea').style.display = 'none';
             }
-        });
-
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            var email = document.getElementById('email').value;
-            var password = document.getElementById('password').value;
-            auth.signInWithEmailAndPassword(email, password).catch(function(error) {
-                alert('Erro ao fazer login: ' + error.message);
-            });
         });
 
         function salvarDados(e) {
@@ -204,10 +179,11 @@
                 produtoData.velocidade = velocidade;
                 produtoData.repeticao = repeticao;
                 produtoData.chagrim = chagrim;
+
                 if (comentario) {
                     produtoData.comentarios.push({
-                        texto: comentario,
                         data: new Date().toLocaleString(),
+                        texto: comentario,
                         visivel: true
                     });
                 }
@@ -218,6 +194,7 @@
                     } else {
                         alert('Dados salvos com sucesso!');
                         atualizarListaProdutos();
+                        document.getElementById('productForm').reset();
                     }
                 });
             });
@@ -226,13 +203,11 @@
         function atualizarListaProdutos() {
             var produtosSalvos = document.getElementById('produtosSalvos');
             produtosSalvos.innerHTML = '<option value="">Selecione um produto salvo</option>';
-
-            var produtosRef = database.ref('produtos');
-            produtosRef.once('value', function(snapshot) {
+            database.ref('produtos').once('value', function(snapshot) {
                 snapshot.forEach(function(childSnapshot) {
                     var option = document.createElement('option');
                     option.value = childSnapshot.key;
-                    option.text = childSnapshot.key;
+                    option.textContent = childSnapshot.key;
                     produtosSalvos.appendChild(option);
                 });
             });
@@ -240,49 +215,43 @@
 
         function mostrarDadosSalvos() {
             var produto = document.getElementById('produtosSalvos').value;
-            var dadosProduto = document.getElementById('dadosProduto');
-            dadosProduto.innerHTML = '';
-
             if (produto) {
                 var produtoRef = database.ref('produtos/' + produto);
                 produtoRef.once('value', function(snapshot) {
                     var data = snapshot.val();
-                    if (data) {
-                        document.getElementById('produto').value = produto;
-                        document.getElementById('perimetro').value = data.perimetro || '';
-                        document.getElementById('corte').value = data.corte || '';
-                        document.getElementById('velocidade').value = data.velocidade || '';
-                        document.getElementById('repeticao').value = data.repeticao || '';
-                        document.getElementById('chagrim').value = data.chagrim || '';
+                    var dadosProduto = document.getElementById('dadosProduto');
+                    dadosProduto.innerHTML = '';
 
-                        data.comentarios.forEach(function(comentario, index) {
-                            if (comentario.visivel || isAdmin) {
+                    document.getElementById('produto').value = produto;
+                    document.getElementById('perimetro').value = data.perimetro || '';
+                    document.getElementById('corte').value = data.corte || '';
+                    document.getElementById('velocidade').value = data.velocidade || '';
+                    document.getElementById('repeticao').value = data.repeticao || '';
+                    document.getElementById('chagrim').value = data.chagrim || '';
+
+                    if (!isAdmin) {
+                        data.comentarios.forEach(function(comentario) {
+                            if (comentario.visivel) {
                                 var div = document.createElement('div');
                                 div.classList.add('comentario-item');
                                 div.innerHTML = `
                                     <div class="comentario-header">
                                         <span class="date">${comentario.data}</span>
-                                        ${isAdmin ? `
-                                            <span class="comentario-visibility" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
-                                                ${comentario.visivel ? '👁️' : '🔒'}
-                                            </span>
-                                            <span class="comentario-edit" onclick="editarComentario('${produto}', ${index})">Editar</span>
-                                            <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>
-                                        ` : ''}
                                     </div>
                                     <div class="comentario-body">${comentario.texto}</div>
                                 `;
                                 dadosProduto.appendChild(div);
                             }
                         });
+                    }
 
-                        if (isAdmin) {
-                            atualizarComentariosAdmin(produto);
-                        }
-                    } else {
-                        document.getElementById('productForm').reset();
+                    if (isAdmin) {
+                        atualizarComentariosAdmin(produto);
                     }
                 });
+            } else {
+                document.getElementById('dadosProduto').innerHTML = '';
+                document.getElementById('productForm').reset();
             }
         }
 
@@ -376,6 +345,7 @@
 
         document.getElementById('productForm').addEventListener('submit', salvarDados);
         document.getElementById('produtosSalvos').addEventListener('change', mostrarDadosSalvos);
+
         atualizarListaProdutos();
     </script>
 </body>
