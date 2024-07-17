@@ -87,7 +87,7 @@
     </div>
 
     <div class="container" id="productArea" style="display:none;">
-        <h2 class="mb-4 title-centered">Lino</h2>
+        <h2 class="mb-4 title-centered">Produtos</h2>
         <form id="productForm">
             <div class="form-group">
                 <label for="produto">Produto</label>
@@ -96,7 +96,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="perimetro">Perímetro</label>
-                    <input type="text" class="form-control" id="perimetro" maxlength="5">
+                    <input type="number" class="form-control" id="perimetro" maxlength="5">
                 </div>
                 <div class="form-group">
                     <label for="corte">Corte</label>
@@ -181,8 +181,8 @@
         function salvarDados(e) {
             e.preventDefault();
             var produto = document.getElementById('produto').value.toUpperCase();
-            var perimetro = document.getElementById('perimetro').value.replace(',', '.');
-            var corte = document.getElementById('corte').value.toUpperCase().replace(',', '.');
+            var perimetro = document.getElementById('perimetro').value;
+            var corte = document.getElementById('corte').value.toUpperCase();
             var velocidade = document.getElementById('velocidade').value;
             var repeticao = document.getElementById('repeticao').value;
             var chagrim = document.getElementById('chagrim').value;
@@ -256,13 +256,13 @@
                         document.getElementById('chagrim').value = data.chagrim || '';
 
                         data.comentarios.forEach(function(comentario, index) {
-                            if (comentario.visivel || auth.currentUser) {
+                            if (comentario.visivel || isAdmin) {
                                 var div = document.createElement('div');
                                 div.classList.add('comentario-item');
                                 div.innerHTML = `
                                     <div class="comentario-header">
                                         <span class="date">${comentario.data}</span>
-                                        ${auth.currentUser ? `
+                                        ${isAdmin ? `
                                             <span class="comentario-visibility" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
                                                 ${comentario.visivel ? '👁️' : '🔒'}
                                             </span>
@@ -276,7 +276,7 @@
                             }
                         });
 
-                        if (auth.currentUser) {
+                        if (isAdmin) {
                             atualizarComentariosAdmin(produto);
                         }
                     } else {
