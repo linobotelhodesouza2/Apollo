@@ -1,13 +1,9 @@
-<!--codigo mais proximo do final ,
-so falta fazer a integração do loguin e autenticação ai finaliza
-teste de funcionalidades do programa autenticação e visualização -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TESTE</title>
+    <title>APOLLO_LINO</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -72,11 +68,28 @@ teste de funcionalidades do programa autenticação e visualização -->
         .title-centered {
             text-align: center;
         }
+        #loginScreen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #loginScreen button {
+            width: 200px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2 class="mb-4 title-centered">TESTES</h2>
+    <div id="loginScreen" class="container">
+        <h2 class="mb-4 title-centered">Área de Login</h2>
+        <button id="userLogin" class="btn btn-primary">Usuário Normal</button>
+        <button id="adminLogin" class="btn btn-secondary">Administrador</button>
+    </div>
+
+    <div id="mainContent" class="container" style="display:none;">
+        <h2 class="mb-4 title-centered">PRODUTOS E CORTES</h2>
         <form id="productForm">
             <div class="form-group">
                 <label for="produto">Produto</label>
@@ -122,7 +135,7 @@ teste de funcionalidades do programa autenticação e visualização -->
     </div>
 
     <div class="container" id="adminArea" style="display:none;">
-        <h2 class="mb-4 title-centered">Administração</h2>
+        <h2 class="mb-4 title-centered">Administrador</h2>
         <div id="comentariosAdmin" class="mt-3"></div>
     </div>
 
@@ -144,16 +157,21 @@ teste de funcionalidades do programa autenticação e visualização -->
 
         var isAdmin = false;
 
-        var senha = prompt("Digite a senha de administrador para acessar a área de administração:");
-        if (senha === "123") {
-            isAdmin = true;
-        } else {
-            alert("Acesso como usuário geral.");
-        }
+        document.getElementById('userLogin').addEventListener('click', function() {
+            isAdmin = false;
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+        });
 
-        document.addEventListener("DOMContentLoaded", function() {
-            if (isAdmin) {
+        document.getElementById('adminLogin').addEventListener('click', function() {
+            var senha = prompt("Digite a senha de administrador:");
+            if (senha === "123") {
+                isAdmin = true;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
                 document.getElementById('adminArea').style.display = 'block';
+            } else {
+                alert("Senha incorreta!");
             }
         });
 
@@ -209,148 +227,130 @@ teste de funcionalidades do programa autenticação e visualização -->
             produtosSalvos.innerHTML = '<option value="">Selecione um produto salvo</option>';
             database.ref('produtos').once('value', function(snapshot) {
                 snapshot.forEach(function(childSnapshot) {
+                    var produto = childSnapshot.key;
                     var option = document.createElement('option');
-                    option.value = childSnapshot.key;
-                    option.textContent = childSnapshot.key;
+                    option.value = produto;
+                    option.textContent = produto;
                     produtosSalvos.appendChild(option);
                 });
             });
         }
 
-        function mostrarDadosSalvos() {
-            var produto = document.getElementById('produtosSalvos').value;
-            if (produto) {
-                var produtoRef = database.ref('produtos/' + produto);
-                produtoRef.once('value', function(snapshot) {
-                    var data = snapshot.val();
-                    var dadosProduto = document.getElementById('dadosProduto');
-                    dadosProduto.innerHTML = '';
-
+        function mostrarDadosProduto(produto) {
+            var produtoRef = database.ref('produtos/' + produto);
+            produtoRef.once('value', function(snapshot) {
+                var produtoData = snapshot.val();
+                if (produtoData) {
                     document.getElementById('produto').value = produto;
-                    document.getElementById('perimetro').value = data.perimetro || '';
-                    document.getElementById('corte').value = data.corte || '';
-                    document.getElementById('velocidade').value = data.velocidade || '';
-                    document.getElementById('repeticao').value = data.repeticao || '';
-                    document.getElementById('chagrim').value = data.chagrim || '';
+                    document.getElementById('perimetro').value = produtoData.perimetro || '';
+                    document.getElementById('corte').value = produtoData.corte || '';
+                    document.getElementById('velocidade').value = produtoData.velocidade || '';
+                    document.getElementById('repeticao').value = produtoData.repeticao || '';
+                    document.getElementById('chagrim').value = produtoData.chagrim || '';
 
-                    if (!isAdmin) {
-                        data.comentarios.forEach(function(comentario) {
-                            if (comentario.visivel) {
-                                var div = document.createElement('div');
-                                div.classList.add('comentario-item');
-                                div.innerHTML = `
+                    var comentariosDiv = document.getElementById('dadosProduto');
+                    comentariosDiv.innerHTML = '';
+                    if (produtoData.comentarios) {
+                        produtoData.comentarios.forEach(function(comentario, index) {
+                            if (comentario.visivel || isAdmin) {
+                                var comentarioItem = document.createElement('div');
+                                comentarioItem.className = 'comentario-item';
+                                comentarioItem.innerHTML = `
                                     <div class="comentario-header">
                                         <span class="date">${comentario.data}</span>
+                                        <div>
+                                            <span class="comentario-visibility">${comentario.visivel ? '👁️' : '🚫'}</span>
+                                            ${isAdmin ? `<span class="comentario-delete" data-index="${index}">🗑️</span><span class="comentario-edit" data-index="${index}">✏️</span>` : ''}
+                                        </div>
                                     </div>
                                     <div class="comentario-body">${comentario.texto}</div>
                                 `;
-                                dadosProduto.appendChild(div);
+                                comentariosDiv.appendChild(comentarioItem);
                             }
                         });
                     }
-
-                    if (isAdmin) {
-                        atualizarComentariosAdmin(produto);
-                    }
-                });
-            } else {
-                document.getElementById('dadosProduto').innerHTML = '';
-                document.getElementById('productForm').reset();
-            }
-        }
-
-        function alternarVisibilidadeComentario(produto, index) {
-            var produtoRef = database.ref('produtos/' + produto);
-            produtoRef.once('value', function(snapshot) {
-                var data = snapshot.val();
-                if (data && data.comentarios) {
-                    data.comentarios[index].visivel = !data.comentarios[index].visivel;
-                    produtoRef.set(data, function(error) {
-                        if (!error) {
-                            alert('Visibilidade do comentário alterada com sucesso!');
-                            mostrarDadosSalvos();
-                        } else {
-                            alert('Erro ao alterar a visibilidade do comentário.');
-                        }
-                    });
-                }
-            });
-        }
-
-        function excluirComentario(produto, index) {
-            var produtoRef = database.ref('produtos/' + produto);
-            produtoRef.once('value', function(snapshot) {
-                var data = snapshot.val();
-                if (data && data.comentarios) {
-                    data.comentarios.splice(index, 1);
-                    produtoRef.set(data, function(error) {
-                        if (!error) {
-                            alert('Comentário excluído com sucesso!');
-                            mostrarDadosSalvos();
-                        } else {
-                            alert('Erro ao excluir o comentário.');
-                        }
-                    });
-                }
-            });
-        }
-
-        function editarComentario(produto, index) {
-            var comentarioEdit = prompt('Digite o novo texto do comentário:');
-            if (comentarioEdit !== null) {
-                var produtoRef = database.ref('produtos/' + produto);
-                produtoRef.once('value', function(snapshot) {
-                    var data = snapshot.val();
-                    if (data && data.comentarios) {
-                        data.comentarios[index].texto = comentarioEdit;
-                        produtoRef.set(data, function(error) {
-                            if (!error) {
-                                alert('Comentário editado com sucesso!');
-                                mostrarDadosSalvos();
-                            } else {
-                                alert('Erro ao editar o comentário.');
-                            }
-                        });
-                    }
-                });
-            }
-        }
-
-        function atualizarComentariosAdmin(produto) {
-            var comentariosAdmin = document.getElementById('comentariosAdmin');
-            comentariosAdmin.innerHTML = '';
-
-            if (!produto) return;
-
-            var produtoRef = database.ref('produtos/' + produto);
-            produtoRef.once('value', function(snapshot) {
-                var data = snapshot.val();
-                if (data && data.comentarios) {
-                    var comentarios = data.comentarios;
-                    comentarios.forEach(function(comentario, index) {
-                        var div = document.createElement('div');
-                        div.classList.add('comentario-item');
-                        div.innerHTML = `
-                            <div class="comentario-header">
-                                <span class="date">${comentario.data}</span>
-                                <span class="comentario-visibility" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
-                                    ${comentario.visivel ? '👁️' : '🔒'}
-                                </span>
-                                <span class="comentario-edit" onclick="editarComentario('${produto}', ${index})">Editar</span>
-                                <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>
-                            </div>
-                            <div class="comentario-body">${comentario.texto}</div>
-                        `;
-                        comentariosAdmin.appendChild(div);
-                    });
+                } else {
+                    alert('Produto não encontrado.');
                 }
             });
         }
 
         document.getElementById('productForm').addEventListener('submit', salvarDados);
-        document.getElementById('produtosSalvos').addEventListener('change', mostrarDadosSalvos);
 
-        atualizarListaProdutos();
+        document.getElementById('produtosSalvos').addEventListener('change', function() {
+            var produto = this.value;
+            if (produto) {
+                mostrarDadosProduto(produto);
+            } else {
+                document.getElementById('productForm').reset();
+                document.getElementById('dadosProduto').innerHTML = '';
+            }
+        });
+
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('comentario-delete')) {
+                var produto = document.getElementById('produto').value.toUpperCase();
+                var index = event.target.getAttribute('data-index');
+                var produtoRef = database.ref('produtos/' + produto);
+                produtoRef.once('value', function(snapshot) {
+                    var produtoData = snapshot.val();
+                    if (produtoData && produtoData.comentarios) {
+                        produtoData.comentarios.splice(index, 1);
+                        produtoRef.set(produtoData, function(error) {
+                            if (error) {
+                                alert('Erro ao deletar o comentário.');
+                            } else {
+                                alert('Comentário deletado com sucesso!');
+                                mostrarDadosProduto(produto);
+                            }
+                        });
+                    }
+                });
+            } else if (event.target.classList.contains('comentario-edit')) {
+                var produto = document.getElementById('produto').value.toUpperCase();
+                var index = event.target.getAttribute('data-index');
+                var novoTexto = prompt('Edite o comentário:');
+                if (novoTexto) {
+                    var produtoRef = database.ref('produtos/' + produto);
+                    produtoRef.once('value', function(snapshot) {
+                        var produtoData = snapshot.val();
+                        if (produtoData && produtoData.comentarios) {
+                            produtoData.comentarios[index].texto = novoTexto;
+                            produtoRef.set(produtoData, function(error) {
+                                if (error) {
+                                    alert('Erro ao editar o comentário.');
+                                } else {
+                                    alert('Comentário editado com sucesso!');
+                                    mostrarDadosProduto(produto);
+                                }
+                            });
+                        }
+                    });
+                }
+            } else if (event.target.classList.contains('comentario-visibility')) {
+                var produto = document.getElementById('produto').value.toUpperCase();
+                var index = event.target.getAttribute('data-index');
+                var produtoRef = database.ref('produtos/' + produto);
+                produtoRef.once('value', function(snapshot) {
+                    var produtoData = snapshot.val();
+                    if (produtoData && produtoData.comentarios) {
+                        produtoData.comentarios[index].visivel = !produtoData.comentarios[index].visivel;
+                        produtoRef.set(produtoData, function(error) {
+                            if (error) {
+                                alert('Erro ao alterar a visibilidade do comentário.');
+                            } else {
+                                alert('Visibilidade do comentário alterada com sucesso!');
+                                mostrarDadosProduto(produto);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
+        window.onload = function() {
+            atualizarListaProdutos();
+        }
     </script>
 </body>
 </html>
