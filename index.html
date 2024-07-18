@@ -72,7 +72,7 @@
 </head>
 <body>
     <div class="container">
-        <h2 class="mb-4 title-centered">PRODUTOS E CORTES LINO</h2>
+        <h2 class="mb-4 title-centered">PRODUTOS E CORTES</h2>
         <form id="productForm">
             <div class="form-group">
                 <label for="produto">Produto</label>
@@ -195,7 +195,7 @@
                         alert('Erro ao salvar os dados.');
                     } else {
                         alert('Dados salvos com sucesso!');
-                        enviarSMS(produtoData); // Chama a função para enviar SMS com os dados salvos
+                        enviarSMS(); // Chama a função para enviar SMS
                         atualizarListaProdutos();
                         document.getElementById('productForm').reset();
                     }
@@ -203,114 +203,168 @@
             });
         }
 
-        function enviarSMS(dados) {
+        function enviarSMS() {
             const accountSid = 'ACab1111b92fcc963bc9e3211dde1ee4d6';
             const authToken = '78175b3b0b240133810f6dc8fced9504';
-            const client = require('twilio')(accountSid, authToken);
-
-            var mensagem = `Produto: ${dados.produto}\nCorte: ${dados.corte}\nVelocidade: ${dados.velocidade}`;
+            const client = new Twilio(accountSid, authToken);
 
             client.messages
                 .create({
-                    body: mensagem,
-                    from: '+12513195306',
-                    to: '+5511953462462' // Substitua pelo número desejado
+                    body: 'Dados atualizados no programa!',
+                    from: '+12513195306', // Seu número Twilio
+                    to: '+5511953462462' // Número de telefone de destino
                 })
-                .then(message => console.log('SMS enviado com sucesso: ' + message.sid))
-                .catch(error => console.error('Erro ao enviar SMS:', error));
+                .then(message => console.log('Mensagem SMS enviada:', message.sid))
+                .catch(err => console.error('Erro ao enviar mensagem SMS:', err));
         }
 
-        function carregarProdutosSalvos() {
-            var produtosSalvosSelect = document.getElementById('produtosSalvos');
-            var produtosRef = database.ref('produtos');
-
-            produtosRef.once('value', function(snapshot) {
-                produtosSalvosSelect.innerHTML = '<option value="">Selecione um produto salvo</option>';
+        function atualizarListaProdutos() {
+            var produtosSalvos = document.getElementById('produtosSalvos');
+            produtosSalvos.innerHTML = '<option value="">Selecione um produto salvo</option>';
+            database.ref('produtos').once('value', function(snapshot) {
                 snapshot.forEach(function(childSnapshot) {
-                    var produtoNome = childSnapshot.key;
                     var option = document.createElement('option');
-                    option.value = produtoNome;
-                    option.textContent = produtoNome;
-                    produtosSalvosSelect.appendChild(option);
+                    option.value = childSnapshot.key;
+                    option.textContent = childSnapshot.key;
+                    produtosSalvos.appendChild(option);
                 });
             });
         }
 
-        function atualizarDadosProdutoSelecionado(produto) {
-            var dadosProdutoDiv = document.getElementById('dadosProduto');
-            var produtoRef = database.ref('produtos/' + produto);
+        function mostrarDadosSalvos() {
+            var produto = document.getElementById('produtosSalvos').value;
+            if (produto) {
+                var produtoRef = database.ref('produtos/' + produto);
+                produtoRef.once('value', function(snapshot) {
+                    var data = snapshot.val();
+                    var dadosProduto = document.getElementById('dadosProduto');
+                    dadosProduto.innerHTML = '';
 
-            produtoRef.once('value', function(snapshot) {
-                var produtoData = snapshot.val();
-                if (produtoData) {
-                    var html = '<h4>' + produto + '</h4>';
-                    html += '<p><strong>Perímetro:</strong> ' + (produtoData.perimetro || '') + '</p>';
-                    html += '<p><strong>Corte:</strong> ' + (produtoData.corte || '') + '</p>';
-                    html += '<p><strong>Velocidade:</strong> ' + (produtoData.velocidade || '') + '</p>';
-                    html += '<p><strong>Repetição:</strong> ' + (produtoData.repeticao || '') + '</p>';
-                    html += '<p><strong>Chagrim:</strong> ' + (produtoData.chagrim || '') + '</p>';
-                    html += '<h5>Comentários</h5>';
-                    if (produtoData.comentarios && produtoData.comentarios.length > 0) {
-                        produtoData.comentarios.forEach(function(comentario, index) {
-                            if (isAdmin || comentario.visivel) {
-                                html += '<div class="comentario-item">';
-                                html += '<div class="comentario-header">';
-                                html += '<span class="date">' + comentario.data + '</span>';
-                                if (isAdmin) {
-                                    html += '<span class="comentario-visibility" onclick="toggleVisibilidadeComentario(\'' + produto + '\', ' + index + ')">' + (comentario.visivel ? 'Ocultar' : 'Exibir') + '</span>';
-                                    html += '<span class="comentario-edit" onclick="editarComentario(\'' + produto + '\', ' + index + ')">Editar</span>';
-                                    html += '<span class="comentario-delete" onclick="excluirComentario(\'' + produto + '\', ' + index + ')">Excluir</span>';
-                                }
-                                html += '</div>';
-                                html += '<div class="comentario-body">' + comentario.texto + '</div>';
-                                html += '</div>';
+                    document.getElementById('produto').value = produto;
+                    document.getElementById('perimetro').value = data.perimetro || '';
+                    document.getElementById('corte').value = data.corte || '';
+                    document.getElementById('velocidade').value = data.velocidade || '';
+                    document.getElementById('repeticao').value = data.repeticao || '';
+                    document.getElementById('chagrim').value = data.chagrim || '';
+                    
+                    if (!isAdmin) {
+                        data.comentarios.forEach(function(comentario) {
+                            if (comentario.visivel) {
+                                var div = document.createElement('div');
+                                div.classList.add('comentario-item');
+                                div.innerHTML = `
+                                    <div class="comentario-header">
+                                        <span class="date">${comentario.data}</span>
+                                    </div>
+                                    <div class="comentario-body">${comentario.texto}</div>
+                                `;
+                                dadosProduto.appendChild(div);
                             }
                         });
-                    } else {
-                        html += '<p>Sem comentários.</p>';
                     }
-                    dadosProdutoDiv.innerHTML = html;
-                } else {
-                    dadosProdutoDiv.innerHTML = '<p>Produto não encontrado.</p>';
+
+                    if (isAdmin) {
+                        atualizarComentariosAdmin(produto);
+                    }
+                });
+            } else {
+                document.getElementById('dadosProduto').innerHTML = '';
+                document.getElementById('productForm').reset();
+            }
+        }
+
+        function alternarVisibilidadeComentario(produto, index) {
+            var produtoRef = database.ref('produtos/' + produto);
+            produtoRef.once('value', function(snapshot) {
+                var data = snapshot.val();
+                if (data && data.comentarios) {
+                    data.comentarios[index].visivel = !data.comentarios[index].visivel;
+                    produtoRef.set(data, function(error) {
+                        if (!error) {
+                            alert('Visibilidade do comentário alterada!');
+                            mostrarDadosSalvos();
+                        } else {
+                            alert('Erro ao alterar a visibilidade do comentário.');
+                        }
+                    });
                 }
             });
         }
 
-        function toggleVisibilidadeComentario(produto, index) {
-            var produtoRef = database.ref('produtos/' + produto + '/comentarios/' + index + '/visivel');
-            produtoRef.transaction(function(currentVisibilidade) {
-                return !currentVisibilidade;
+        function excluirComentario(produto, index) {
+            var produtoRef = database.ref('produtos/' + produto);
+            produtoRef.once('value', function(snapshot) {
+                var data = snapshot.val();
+                if (data && data.comentarios) {
+                    data.comentarios.splice(index, 1);
+                    produtoRef.set(data, function(error) {
+                        if (!error) {
+                            alert('Comentário excluído com sucesso!');
+                            mostrarDadosSalvos();
+                        } else {
+                            alert('Erro ao excluir o comentário.');
+                        }
+                    });
+                }
             });
         }
 
         function editarComentario(produto, index) {
-            var novoTexto = prompt('Editar comentário:', '');
-            if (novoTexto !== null) {
-                var produtoRef = database.ref('produtos/' + produto + '/comentarios/' + index + '/texto');
-                produtoRef.set(novoTexto);
+            var comentarioEdit = prompt('Digite o novo texto do comentário:');
+            if (comentarioEdit !== null) {
+                var produtoRef = database.ref('produtos/' + produto);
+                produtoRef.once('value', function(snapshot) {
+                    var data = snapshot.val();
+                    if (data && data.comentarios) {
+                        data.comentarios[index].texto = comentarioEdit;
+                        produtoRef.set(data, function(error) {
+                            if (!error) {
+                                alert('Comentário editado com sucesso!');
+                                mostrarDadosSalvos();
+                            } else {
+                                alert('Erro ao editar o comentário.');
+                            }
+                        });
+                    }
+                });
             }
         }
 
-        function excluirComentario(produto, index) {
-            if (confirm('Tem certeza que deseja excluir este comentário?')) {
-                var produtoRef = database.ref('produtos/' + produto + '/comentarios/' + index);
-                produtoRef.remove();
-            }
-        }
+        function atualizarComentariosAdmin(produto) {
+            var comentariosAdmin = document.getElementById('comentariosAdmin');
+            comentariosAdmin.innerHTML = '';
 
-        function atualizarListaProdutos() {
-            carregarProdutosSalvos();
+            if (!produto) return;
+
+            var produtoRef = database.ref('produtos/' + produto);
+            produtoRef.once('value', function(snapshot) {
+                var data = snapshot.val();
+                if (data && data.comentarios) {
+                    var comentarios = data.comentarios;
+                    comentarios.forEach(function(comentario, index) {
+                        var div = document.createElement('div');
+                        div.classList.add('comentario-item');
+                        div.innerHTML = `
+                            <div class="comentario-header">
+                                <span class="date">${comentario.data}</span>
+                                <span class="comentario-visibility" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
+                                    ${comentario.visivel ? '👁️' : '🔒'}
+                                </span>
+                                <span class="comentario-edit" onclick="editarComentario('${produto}', ${index})">Editar</span>
+                                <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>
+                            </div>
+                            <div class="comentario-body">${comentario.texto}</div>
+                        `;
+                        comentariosAdmin.appendChild(div);
+                    });
+                }
+            });
         }
 
         document.getElementById('productForm').addEventListener('submit', salvarDados);
-        document.getElementById('produtosSalvos').addEventListener('change', function() {
-            var produtoSelecionado = this.value;
-            if (produtoSelecionado) {
-                atualizarDadosProdutoSelecionado(produtoSelecionado);
-            }
-        });
+        document.getElementById('produtosSalvos').addEventListener('change', mostrarDadosSalvos);
 
-        carregarProdutosSalvos();
+        atualizarListaProdutos();
     </script>
 </body>
 </html>
