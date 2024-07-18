@@ -7,30 +7,13 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            margin: 0;
-            padding: 0;
+            margin: 20px;
+            padding: 20px;
             background-image: url('https://i.pinimg.com/736x/01/22/d9/0122d95177d733f1dabd36acca11fef5.jpg');
             background-size: cover;
             background-repeat: no-repeat;
             background-attachment: fixed;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             color: #333;
-        }
-        .login-container {
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-            text-align: center;
-        }
-        .login-container h2 {
-            margin-bottom: 20px;
-        }
-        .login-container button {
-            margin: 10px 0;
         }
         .container {
             max-width: 800px;
@@ -38,7 +21,9 @@
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-            display: none;
+        }
+        #dadosProduto {
+            margin-top: 20px;
         }
         .comentario-item {
             background: #ffffff;
@@ -86,14 +71,7 @@
     </style>
 </head>
 <body>
-    <div class="login-container" id="loginScreen">
-        <h2>Bem-vindo ao APOLLO_LINO</h2>
-        <p>Escolha o tipo de login:</p>
-        <button id="userLogin" class="btn btn-primary btn-block">Usuário Normal</button>
-        <button id="adminLogin" class="btn btn-secondary btn-block">Administrador</button>
-    </div>
-
-    <div class="container" id="mainContent">
+    <div class="container">
         <h2 class="mb-4 title-centered">PRODUTOS E CORTES</h2>
         <form id="productForm">
             <div class="form-group">
@@ -162,22 +140,16 @@
 
         var isAdmin = false;
 
-        document.getElementById('userLogin').addEventListener('click', function() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('mainContent').style.display = 'block';
-        });
+        var senha = prompt("Digite a senha de administrador para acessar a área:");
+        if (senha === "123") {
+            isAdmin = true;
+        } else {
+            alert("Acesso como usuário normal.");
+        }
 
-        document.getElementById('adminLogin').addEventListener('click', function() {
-            var senha = prompt("Digite a senha de administrador para acessar a área:");
-            if (senha === "123") {
-                isAdmin = true;
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('mainContent').style.display = 'block';
+        document.addEventListener("DOMContentLoaded", function() {
+            if (isAdmin) {
                 document.getElementById('adminArea').style.display = 'block';
-            } else {
-                alert("Senha incorreta. Acesso como usuário normal.");
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('mainContent').style.display = 'block';
             }
         });
 
@@ -218,21 +190,20 @@
 
                 produtoRef.set(produtoData, function(error) {
                     if (error) {
-                        alert("Erro ao salvar dados: " + error.message);
+                        alert('Erro ao salvar os dados.');
                     } else {
-                        alert("Dados salvos com sucesso!");
+                        alert('Dados salvos com sucesso!');
+                        atualizarListaProdutos();
                         document.getElementById('productForm').reset();
-                        carregarProdutosSalvos();
                     }
                 });
             });
         }
 
-        function carregarProdutosSalvos() {
+        function atualizarListaProdutos() {
             var produtosSalvos = document.getElementById('produtosSalvos');
             produtosSalvos.innerHTML = '<option value="">Selecione um produto salvo</option>';
-            var produtoRef = database.ref('produtos');
-            produtoRef.once('value', function(snapshot) {
+            database.ref('produtos').once('value', function(snapshot) {
                 snapshot.forEach(function(childSnapshot) {
                     var option = document.createElement('option');
                     option.value = childSnapshot.key;
@@ -242,122 +213,140 @@
             });
         }
 
-        function exibirDadosProduto(produtoData) {
-            var dadosProduto = document.getElementById('dadosProduto');
-            dadosProduto.innerHTML = `
-                <p><strong>Perímetro:</strong> ${produtoData.perimetro || ''}</p>
-                <p><strong>Corte:</strong> ${produtoData.corte || ''}</p>
-                <p><strong>Velocidade:</strong> ${produtoData.velocidade || ''}</p>
-                <p><strong>Repetição:</strong> ${produtoData.repeticao || ''}</p>
-                <p><strong>Chagrim:</strong> ${produtoData.chagrim || ''}</p>
-                <div><strong>Comentários:</strong> ${exibirComentarios(produtoData.comentarios || [])}</div>
-            `;
-        }
+        function mostrarDadosSalvos() {
+            var produto = document.getElementById('produtosSalvos').value;
+            if (produto) {
+                var produtoRef = database.ref('produtos/' + produto);
+                produtoRef.once('value', function(snapshot) {
+                    var data = snapshot.val();
+                    var dadosProduto = document.getElementById('dadosProduto');
+                    dadosProduto.innerHTML = '';
 
-        function exibirComentarios(comentarios) {
-            return comentarios.map(function(comentario, index) {
-                return `
-                    <div class="comentario-item">
-                        <div class="comentario-header">
-                            <span class="date">${comentario.data}</span>
-                            ${isAdmin ? `
-                                <span class="comentario-visibility" onclick="toggleVisibilidadeComentario('${index}')">${comentario.visivel ? '👁️' : '👁️‍🗨️'}</span>
-                                <span class="comentario-delete" onclick="deletarComentario('${index}')">🗑️</span>
-                                <span class="comentario-edit" onclick="editarComentario('${index}')">✏️</span>
-                            ` : ''}
-                        </div>
-                        <div class="comentario-body">${comentario.texto}</div>
-                    </div>
-                `;
-            }).join('');
-        }
+                    document.getElementById('produto').value = produto;
+                    document.getElementById('perimetro').value = data.perimetro || '';
+                    document.getElementById('corte').value = data.corte || '';
+                    document.getElementById('velocidade').value = data.velocidade || '';
+                    document.getElementById('repeticao').value = data.repeticao || '';
+                    document.getElementById('chagrim').value = data.chagrim || '';
 
-        function toggleVisibilidadeComentario(index) {
-            var produtoSelecionado = document.getElementById('produtosSalvos').value;
-            if (!produtoSelecionado) return;
-
-            var produtoRef = database.ref('produtos/' + produtoSelecionado);
-            produtoRef.once('value', function(snapshot) {
-                var produtoData = snapshot.val();
-                if (produtoData && produtoData.comentarios && produtoData.comentarios[index]) {
-                    produtoData.comentarios[index].visivel = !produtoData.comentarios[index].visivel;
-                    produtoRef.set(produtoData, function(error) {
-                        if (error) {
-                            alert("Erro ao atualizar visibilidade: " + error.message);
-                        } else {
-                            carregarComentariosAdmin(produtoData.comentarios);
-                        }
-                    });
-                }
-            });
-        }
-
-        function deletarComentario(index) {
-            var produtoSelecionado = document.getElementById('produtosSalvos').value;
-            if (!produtoSelecionado) return;
-
-            var produtoRef = database.ref('produtos/' + produtoSelecionado);
-            produtoRef.once('value', function(snapshot) {
-                var produtoData = snapshot.val();
-                if (produtoData && produtoData.comentarios) {
-                    produtoData.comentarios.splice(index, 1);
-                    produtoRef.set(produtoData, function(error) {
-                        if (error) {
-                            alert("Erro ao deletar comentário: " + error.message);
-                        } else {
-                            carregarComentariosAdmin(produtoData.comentarios);
-                        }
-                    });
-                }
-            });
-        }
-
-        function editarComentario(index) {
-            var novoTexto = prompt("Digite o novo texto do comentário:");
-            if (!novoTexto) return;
-
-            var produtoSelecionado = document.getElementById('produtosSalvos').value;
-            if (!produtoSelecionado) return;
-
-            var produtoRef = database.ref('produtos/' + produtoSelecionado);
-            produtoRef.once('value', function(snapshot) {
-                var produtoData = snapshot.val();
-                if (produtoData && produtoData.comentarios && produtoData.comentarios[index]) {
-                    produtoData.comentarios[index].texto = novoTexto;
-                    produtoRef.set(produtoData, function(error) {
-                        if (error) {
-                            alert("Erro ao editar comentário: " + error.message);
-                        } else {
-                            carregarComentariosAdmin(produtoData.comentarios);
-                        }
-                    });
-                }
-            });
-        }
-
-        function carregarComentariosAdmin(comentarios) {
-            var comentariosAdmin = document.getElementById('comentariosAdmin');
-            comentariosAdmin.innerHTML = exibirComentarios(comentarios);
-        }
-
-        document.getElementById('produtosSalvos').addEventListener('change', function() {
-            var produtoSelecionado = this.value;
-            if (!produtoSelecionado) return;
-
-            var produtoRef = database.ref('produtos/' + produtoSelecionado);
-            produtoRef.once('value', function(snapshot) {
-                var produtoData = snapshot.val();
-                if (produtoData) {
-                    exibirDadosProduto(produtoData);
-                    if (isAdmin) {
-                        carregarComentariosAdmin(produtoData.comentarios || []);
+                    if (!isAdmin) {
+                        data.comentarios.forEach(function(comentario) {
+                            if (comentario.visivel) {
+                                var div = document.createElement('div');
+                                div.classList.add('comentario-item');
+                                div.innerHTML = `
+                                    <div class="comentario-header">
+                                        <span class="date">${comentario.data}</span>
+                                    </div>
+                                    <div class="comentario-body">${comentario.texto}</div>
+                                `;
+                                dadosProduto.appendChild(div);
+                            }
+                        });
                     }
+
+                    if (isAdmin) {
+                        atualizarComentariosAdmin(produto);
+                    }
+                });
+            } else {
+                document.getElementById('dadosProduto').innerHTML = '';
+                document.getElementById('productForm').reset();
+            }
+        }
+
+        function alternarVisibilidadeComentario(produto, index) {
+            var produtoRef = database.ref('produtos/' + produto);
+            produtoRef.once('value', function(snapshot) {
+                var data = snapshot.val();
+                if (data && data.comentarios) {
+                    data.comentarios[index].visivel = !data.comentarios[index].visivel;
+                    produtoRef.set(data, function(error) {
+                        if (!error) {
+                            alert('Visibilidade alterada com sucesso!');
+                            mostrarDadosSalvos();
+                        } else {
+                            alert('Erro ao alterar a visibilidade.');
+                        }
+                    });
                 }
             });
-        });
+        }
+
+        function excluirComentario(produto, index) {
+            var produtoRef = database.ref('produtos/' + produto);
+            produtoRef.once('value', function(snapshot) {
+                var data = snapshot.val();
+                if (data && data.comentarios) {
+                    data.comentarios.splice(index, 1);
+                    produtoRef.set(data, function(error) {
+                        if (!error) {
+                            alert('Comentário excluído com sucesso!');
+                            mostrarDadosSalvos();
+                        } else {
+                            alert('Erro ao excluir o comentário.');
+                        }
+                    });
+                }
+            });
+        }
+
+        function editarComentario(produto, index) {
+            var comentarioEdit = prompt('Digite o novo comentário:');
+            if (comentarioEdit !== null) {
+                var produtoRef = database.ref('produtos/' + produto);
+                produtoRef.once('value', function(snapshot) {
+                    var data = snapshot.val();
+                    if (data && data.comentarios) {
+                        data.comentarios[index].texto = comentarioEdit;
+                        produtoRef.set(data, function(error) {
+                            if (!error) {
+                                alert('Comentário editado com sucesso!');
+                                mostrarDadosSalvos();
+                            } else {
+                                alert('Erro ao editar o comentário.');
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        function atualizarComentariosAdmin(produto) {
+            var comentariosAdmin = document.getElementById('comentariosAdmin');
+            comentariosAdmin.innerHTML = '';
+
+            if (!produto) return;
+
+            var produtoRef = database.ref('produtos/' + produto);
+            produtoRef.once('value', function(snapshot) {
+                var data = snapshot.val();
+                if (data && data.comentarios) {
+                    var comentarios = data.comentarios;
+                    comentarios.forEach(function(comentario, index) {
+                        var div = document.createElement('div');
+                        div.classList.add('comentario-item');
+                        div.innerHTML = `
+                            <div class="comentario-header">
+                                <span class="date">${comentario.data}</span>
+                                <span class="comentario-visibility" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
+                                    ${comentario.visivel ? '👁️' : '🔒'}
+                                </span>
+                                <span class="comentario-edit" onclick="editarComentario('${produto}', ${index})">Editar</span>
+                                <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>
+                            </div>
+                            <div class="comentario-body">${comentario.texto}</div>
+                        `;
+                        comentariosAdmin.appendChild(div);
+                    });
+                }
+            });
+        }
 
         document.getElementById('productForm').addEventListener('submit', salvarDados);
-        carregarProdutosSalvos();
+        document.getElementById('produtosSalvos').addEventListener('change', mostrarDadosSalvos);
+
+        atualizarListaProdutos();
     </script>
 </body>
 </html>
