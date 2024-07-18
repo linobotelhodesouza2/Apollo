@@ -124,6 +124,8 @@
 
     <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twilio/3.53.0/twilio.min.js" integrity="sha512-mr1GmBImMj3a1mZ+5JZ5Ue0qYsDt5a8bRgzOx6NZYlLwCeC9RKu+Jr5ObFD8eayu2osFFb9A4MQUVzxfG7q2Wg==" crossorigin="anonymous"></script>
 
     <script>
         var firebaseConfig = {
@@ -193,11 +195,27 @@
                         alert('Erro ao salvar os dados.');
                     } else {
                         alert('Dados salvos com sucesso!');
+                        enviarSMS(); // Chama a função para enviar SMS
                         atualizarListaProdutos();
                         document.getElementById('productForm').reset();
                     }
                 });
             });
+        }
+
+        function enviarSMS() {
+            const accountSid = 'ACab1111b92fcc963bc9e3211dde1ee4d6';
+            const authToken = '78175b3b0b240133810f6dc8fced9504';
+            const client = new Twilio(accountSid, authToken);
+
+            client.messages
+                .create({
+                    body: 'Dados atualizados no programa!',
+                    from: '+12513195306', // Seu número Twilio
+                    to: '+5511953462462' // Número de telefone de destino
+                })
+                .then(message => console.log('Mensagem SMS enviada:', message.sid))
+                .catch(err => console.error('Erro ao enviar mensagem SMS:', err));
         }
 
         function atualizarListaProdutos() {
