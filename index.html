@@ -203,20 +203,6 @@
             });
         }
 
-        function enviarSMS() {
-            const accountSid = 'ACab1111b92fcc963bc9e3211dde1ee4d6';
-            const authToken = '78175b3b0b240133810f6dc8fced9504';
-            const client = new Twilio(accountSid, authToken);
-
-            client.messages
-                .create({
-                    body: 'Dados atualizados no programa!',
-                    from: '+12513195306', // Seu número Twilio
-                    to: '+5511953462462' // Número de telefone de destino
-                })
-                .then(message => console.log('Mensagem SMS enviada:', message.sid))
-                .catch(err => console.error('Erro ao enviar mensagem SMS:', err));
-        }
 
         function atualizarListaProdutos() {
             var produtosSalvos = document.getElementById('produtosSalvos');
