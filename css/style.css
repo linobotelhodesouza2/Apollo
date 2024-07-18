@@ -1,0 +1,62 @@
+body {
+    margin: 20px;
+    padding: 20px;
+    background-image: url('https://i.pinimg.com/736x/01/22/d9/0122d95177d733f1dabd36acca11fef5.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: #333;
+}
+.container {
+    max-width: 800px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+#dadosProduto {
+    margin-top: 20px;
+}
+.comentario-item {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+}
+.comentario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.comentario-header .date {
+    font-size: 0.9em;
+    color: #888;
+}
+.comentario-body {
+    margin-top: 5px;
+}
+.comentario-delete, .comentario-edit, .comentario-visibility {
+    cursor: pointer;
+    margin-left: 10px;
+}
+.comentario-delete {
+    color: red;
+}
+.form-row {
+    display: flex;
+    justify-content: space-between;
+}
+.form-row .form-group {
+    flex: 1;
+    margin-right: 10px;
+}
+.form-row .form-group:last-child {
+    margin-right: 0;
+}
+.form-control {
+    max-width: none;
+}
+.title-centered {
+    text-align: center;
+}
