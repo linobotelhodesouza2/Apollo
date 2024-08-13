@@ -3,17 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gerenciamento </title>
+    <title>Gerenciamento de Produtos</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* Estilos CSS aqui */
+        body {
+            margin: 20px;
+            padding: 20px;
+            background-image: url('https://i.pinimg.com/736x/01/22/d9/0122d95177d733f1dabd36acca11fef5.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            background-color: rgba(255, 255, 255, 0.8); /* Fundo branco semi-transparente */
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        #dadosProduto {
+            margin-top: 20px;
+        }
+        .comentario-item {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+        }
+        .comentario-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .comentario-header .date {
+            font-size: 0.9em;
+            color: #888;
+        }
+        .comentario-body {
+            margin-top: 5px;
+        }
+        .comentario-delete {
+            cursor: pointer;
+            color: red;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2 class="mb-4 title-centered">Gerenciamento de Produtos</h2>
+        <h2 class="mb-4">Gerenciamento de Produtos</h2>
         <form id="productForm">
-            <!-- Campos do formulário -->
+            <div class="form-group">
+                <label for="produto">Produto</label>
+                <input type="text" class="form-control" id="produto" required>
+            </div>
+            <div class="form-group">
+                <label for="perimetro">Perímetro</label>
+                <input type="number" class="form-control" id="perimetro">
+            </div>
+            <div class="form-group">
+                <label for="corte">Corte</label>
+                <input type="text" class="form-control" id="corte" required>
+            </div>
+            <div class="form-group">
+                <label for="repeticao">Repetição</label>
+                <input type="number" class="form-control" id="repeticao">
+            </div>
+            <div class="form-group">
+                <label for="velocidade">Velocidade</label>
+                <input type="number" class="form-control" id="velocidade" required>
+            </div>
+            <div class="form-group">
+                <label for="chagrim">Chagrim</label>
+                <select class="form-control" id="chagrim">
+                    <option value="Sim">Sim</option>
+                    <option value="Não">Não</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="comentario">Comentário</label>
+                <input type="text" class="form-control" id="comentario">
+            </div>
             <button type="submit" class="btn btn-primary btn-block">Salvar</button>
         </form>
         <select id="produtosSalvos" class="form-control mt-3">
@@ -41,14 +112,9 @@
 
         function salvarDados(e) {
             e.preventDefault();
-
-            console.log("Iniciando salvamento de dados...");
-
             var produto = document.getElementById('produto').value.toUpperCase();
-            var perimetro = document.getElementById('perimetro').value;
             var corte = document.getElementById('corte').value.toUpperCase();
             var velocidade = document.getElementById('velocidade').value;
-            var repeticao = document.getElementById('repeticao').value;
             var chagrim = document.getElementById('chagrim').value;
             var comentario = document.getElementById('comentario').value;
 
@@ -57,16 +123,29 @@
                 return;
             }
 
-            console.log("Dados capturados: ", { produto, perimetro, corte, velocidade, repeticao, chagrim, comentario });
-
             var produtoRef = database.ref('produtos/' + produto);
             produtoRef.once('value', function(snapshot) {
-                var produtoData = snapshot.val() || {};
-                produtoData.perimetro = perimetro;
-                produtoData.corte = corte;
-                produtoData.velocidade = velocidade;
-                produtoData.repeticao = repeticao;
-                produtoData.chagrim = chagrim;
+                var produtoData = snapshot.val();
+
+                if (produtoData) {
+                    // Produto já existe, preencher os campos automáticos se não estiverem definidos
+                    document.getElementById('perimetro').value = produtoData.perimetro || '';
+                    document.getElementById('repeticao').value = produtoData.repeticao || '';
+                    document.getElementById('chagrim').value = produtoData.chagrim || '';
+                } else {
+                    // Produto não existe, salvar os dados
+                    var perimetro = document.getElementById('perimetro').value;
+                    var repeticao = document.getElementById('repeticao').value;
+
+                    produtoData = {
+                        produto: produto,
+                        perimetro: perimetro,
+                        corte: corte,
+                        repeticao: repeticao,
+                        velocidade: velocidade,
+                        chagrim: chagrim
+                    };
+                }
 
                 if (comentario) {
                     if (!produtoData.comentarios) {
@@ -78,16 +157,11 @@
                     });
                 }
 
-                produtoRef.set(produtoData, function(error) {
-                    if (!error) {
-                        alert('Dados salvos com sucesso!');
-                        document.getElementById('productForm').reset();
-                        atualizarListaProdutos();
-                    } else {
-                        alert('Erro ao salvar os dados.');
-                        console.error("Erro ao salvar no Firebase: ", error);
-                    }
-                });
+                produtoRef.set(produtoData);
+
+                alert('Dados salvos com sucesso!');
+                document.getElementById('productForm').reset();
+                atualizarListaProdutos();
             });
         }
 
@@ -115,21 +189,26 @@
                     dadosProduto.innerHTML = '';
 
                     var data = snapshot.val();
-                    document.getElementById('produto').value = produto;
-                    document.getElementById('perimetro').value = data.perimetro || '';
-                    document.getElementById('corte').value = ''; 
-                    document.getElementById('repeticao').value = data.repeticao || '';
-                    document.getElementById('velocidade').value = ''; 
-                    document.getElementById('chagrim').value = data.chagrim || 'Não';
-                    document.getElementById('comentario').value = '';
-
                     for (var key in data) {
                         if (data.hasOwnProperty(key) && key !== 'comentarios') {
+                            var value = data[key];
                             var div = document.createElement('div');
-                            div.classList.add('dados-item');
-                            div.innerHTML = `<strong>${key}:</strong> ${data[key]}`;
+                            div.classList.add('list-group-item');
+                            div.innerHTML = `<strong>${key}:</strong> ${value}`;
                             dadosProduto.appendChild(div);
                         }
+                    }
+
+                    // Preencher os campos Perímetro e Repetição se existirem nos dados salvos
+                    if (data.perimetro) {
+                        document.getElementById('perimetro').value = data.perimetro;
+                    }
+                    if (data.repeticao) {
+                        document.getElementById('repeticao').value = data.repeticao;
+                    }
+                    // Preencher o campo Chagrim se existir nos dados salvos
+                    if (data.chagrim) {
+                        document.getElementById('chagrim').value = data.chagrim;
                     }
 
                     if (data.comentarios) {
@@ -150,7 +229,6 @@
                 });
             } else {
                 document.getElementById('dadosProduto').innerHTML = '';
-                document.getElementById('productForm').reset();
             }
         }
 
