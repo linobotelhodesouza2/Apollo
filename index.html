@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gerenciamento de Produtos</title>
+    <title>LINO</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -17,7 +17,7 @@
         }
         .container {
             max-width: 800px;
-            background-color: rgba(255, 255, 255, 0.8); /* Fundo branco semi-transparente */
+            background-color: rgba(255, 255, 255, 0.8);
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
@@ -44,42 +44,66 @@
         .comentario-body {
             margin-top: 5px;
         }
-        .comentario-delete {
+        .comentario-delete, .comentario-edit, .comentario-visibility {
             cursor: pointer;
+            margin-left: 10px;
+        }
+        .comentario-delete {
             color: red;
+        }
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+        }
+        .form-row .form-group {
+            flex: 1;
+            margin-right: 10px;
+        }
+        .form-row .form-group:last-child {
+            margin-right: 0;
+        }
+        .form-control {
+            max-width: none;
+        }
+        .title-centered {
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2 class="mb-4">Gerenciamento de Produtos</h2>
+        <h2 class="mb-4 title-centered">PRODUTOS E CORTES</h2>
         <form id="productForm">
             <div class="form-group">
                 <label for="produto">Produto</label>
                 <input type="text" class="form-control" id="produto" required>
             </div>
-            <div class="form-group">
-                <label for="perimetro">Perímetro</label>
-                <input type="number" class="form-control" id="perimetro">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="perimetro">Perímetro</label>
+                    <input type="number" class="form-control" id="perimetro" maxlength="5">
+                </div>
+                <div class="form-group">
+                    <label for="corte">Corte</label>
+                    <input type="text" class="form-control" id="corte" required maxlength="5">
+                </div>
+                <div class="form-group">
+                    <label for="chagrim">Chagrim</label>
+                    <select class="form-control" id="chagrim">
+                        <option value="Sim">Sim</option>
+                        <option value="Não">Não</option>
+                    </select>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="corte">Corte</label>
-                <input type="text" class="form-control" id="corte" required>
-            </div>
-            <div class="form-group">
-                <label for="repeticao">Repetição</label>
-                <input type="number" class="form-control" id="repeticao">
-            </div>
-            <div class="form-group">
-                <label for="velocidade">Velocidade</label>
-                <input type="number" class="form-control" id="velocidade" required>
-            </div>
-            <div class="form-group">
-                <label for="chagrim">Chagrim</label>
-                <select class="form-control" id="chagrim">
-                    <option value="Sim">Sim</option>
-                    <option value="Não">Não</option>
-                </select>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="repeticao">Repetição</label>
+                    <input type="number" class="form-control" id="repeticao" maxlength="5">
+                </div>
+                <div class="form-group">
+                    <label for="velocidade">Velocidade</label>
+                    <input type="number" class="form-control" id="velocidade" required maxlength="5">
+                </div>
             </div>
             <div class="form-group">
                 <label for="comentario">Comentário</label>
@@ -93,11 +117,17 @@
         <div id="dadosProduto" class="mt-3"></div>
     </div>
 
+    <div class="container" id="adminArea" style="display:none;">
+        <h2 class="mb-4 title-centered">Administrador</h2>
+        <div id="comentariosAdmin" class="mt-3"></div>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twilio/3.53.0/twilio.min.js" integrity="sha512-mr1GmBImMj3a1mZ+5JZ5Ue0qYsDt5a8bRgzOx6NZYlLwCeC9RKu+Jr5ObFD8eayu2osFFb9A4MQUVzxfG7q2Wg==" crossorigin="anonymous"></script>
 
     <script>
-        // Configuração do Firebase
         var firebaseConfig = {
             apiKey: "AIzaSyA2t1UP-9F3qKvgdfFdLL7L13S",
             authDomain: "myapp1-7da01.firebaseapp.com",
@@ -110,11 +140,28 @@
         firebase.initializeApp(firebaseConfig);
         var database = firebase.database();
 
+        var isAdmin = false;
+
+        var senha = prompt("Digite a senha de administrador para acessar:");
+        if (senha === "1") {
+            isAdmin = true;
+        } else {
+            alert("Acesso como usuário normal.");
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            if (isAdmin) {
+                document.getElementById('adminArea').style.display = 'block';
+            }
+        });
+
         function salvarDados(e) {
             e.preventDefault();
             var produto = document.getElementById('produto').value.toUpperCase();
+            var perimetro = document.getElementById('perimetro').value;
             var corte = document.getElementById('corte').value.toUpperCase();
             var velocidade = document.getElementById('velocidade').value;
+            var repeticao = document.getElementById('repeticao').value;
             var chagrim = document.getElementById('chagrim').value;
             var comentario = document.getElementById('comentario').value;
 
@@ -125,56 +172,46 @@
 
             var produtoRef = database.ref('produtos/' + produto);
             produtoRef.once('value', function(snapshot) {
-                var produtoData = snapshot.val();
-
-                if (produtoData) {
-                    // Produto já existe, preencher os campos automáticos se não estiverem definidos
-                    document.getElementById('perimetro').value = produtoData.perimetro || '';
-                    document.getElementById('repeticao').value = produtoData.repeticao || '';
-                    document.getElementById('chagrim').value = produtoData.chagrim || '';
-                } else {
-                    // Produto não existe, salvar os dados
-                    var perimetro = document.getElementById('perimetro').value;
-                    var repeticao = document.getElementById('repeticao').value;
-
-                    produtoData = {
-                        produto: produto,
-                        perimetro: perimetro,
-                        corte: corte,
-                        repeticao: repeticao,
-                        velocidade: velocidade,
-                        chagrim: chagrim
-                    };
+                var produtoData = snapshot.val() || {};
+                if (!produtoData.comentarios) {
+                    produtoData.comentarios = [];
                 }
+                produtoData.perimetro = perimetro;
+                produtoData.corte = corte;
+                produtoData.velocidade = velocidade;
+                produtoData.repeticao = repeticao;
+                produtoData.chagrim = chagrim;
 
                 if (comentario) {
-                    if (!produtoData.comentarios) {
-                        produtoData.comentarios = [];
-                    }
-                    produtoData.comentarios.unshift({
+                    produtoData.comentarios.push({
+                        data: new Date().toLocaleString(),
                         texto: comentario,
-                        data: new Date().toLocaleString()
+                        visivel: true
                     });
                 }
 
-                produtoRef.set(produtoData);
-
-                alert('Dados salvos com sucesso!');
-                document.getElementById('productForm').reset();
-                atualizarListaProdutos();
+                produtoRef.set(produtoData, function(error) {
+                    if (error) {
+                        alert('Erro ao salvar os dados.');
+                    } else {
+                        alert('Dados salvos com sucesso!');
+                        enviarSMS(); // Chama a função para enviar SMS
+                        atualizarListaProdutos();
+                        document.getElementById('productForm').reset();
+                    }
+                });
             });
         }
+
 
         function atualizarListaProdutos() {
             var produtosSalvos = document.getElementById('produtosSalvos');
             produtosSalvos.innerHTML = '<option value="">Selecione um produto salvo</option>';
-
             database.ref('produtos').once('value', function(snapshot) {
                 snapshot.forEach(function(childSnapshot) {
-                    var produto = childSnapshot.key;
                     var option = document.createElement('option');
-                    option.value = produto;
-                    option.text = produto;
+                    option.value = childSnapshot.key;
+                    option.textContent = childSnapshot.key;
                     produtosSalvos.appendChild(option);
                 });
             });
@@ -185,51 +222,59 @@
             if (produto) {
                 var produtoRef = database.ref('produtos/' + produto);
                 produtoRef.once('value', function(snapshot) {
+                    var data = snapshot.val();
                     var dadosProduto = document.getElementById('dadosProduto');
                     dadosProduto.innerHTML = '';
 
-                    var data = snapshot.val();
-                    for (var key in data) {
-                        if (data.hasOwnProperty(key) && key !== 'comentarios') {
-                            var value = data[key];
-                            var div = document.createElement('div');
-                            div.classList.add('list-group-item');
-                            div.innerHTML = `<strong>${key}:</strong> ${value}`;
-                            dadosProduto.appendChild(div);
-                        }
-                    }
-
-                    // Preencher os campos Perímetro e Repetição se existirem nos dados salvos
-                    if (data.perimetro) {
-                        document.getElementById('perimetro').value = data.perimetro;
-                    }
-                    if (data.repeticao) {
-                        document.getElementById('repeticao').value = data.repeticao;
-                    }
-                    // Preencher o campo Chagrim se existir nos dados salvos
-                    if (data.chagrim) {
-                        document.getElementById('chagrim').value = data.chagrim;
-                    }
-
-                    if (data.comentarios) {
-                        var comentarios = data.comentarios;
-                        comentarios.forEach(function(comentario, index) {
-                            var div = document.createElement('div');
-                            div.classList.add('comentario-item');
-                            div.innerHTML = `
-                                <div class="comentario-header">
-                                    <span class="date">${comentario.data}</span>
-                                    <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>
-                                </div>
-                                <div class="comentario-body">${comentario.texto}</div>
-                            `;
-                            dadosProduto.appendChild(div);
+                    document.getElementById('produto').value = produto;
+                    document.getElementById('perimetro').value = data.perimetro || '';
+                    document.getElementById('corte').value = data.corte || '';
+                    document.getElementById('velocidade').value = data.velocidade || '';
+                    document.getElementById('repeticao').value = data.repeticao || '';
+                    document.getElementById('chagrim').value = data.chagrim || '';
+                    
+                    if (!isAdmin) {
+                        data.comentarios.forEach(function(comentario) {
+                            if (comentario.visivel) {
+                                var div = document.createElement('div');
+                                div.classList.add('comentario-item');
+                                div.innerHTML = `
+                                    <div class="comentario-header">
+                                        <span class="date">${comentario.data}</span>
+                                    </div>
+                                    <div class="comentario-body">${comentario.texto}</div>
+                                `;
+                                dadosProduto.appendChild(div);
+                            }
                         });
+                    }
+
+                    if (isAdmin) {
+                        atualizarComentariosAdmin(produto);
                     }
                 });
             } else {
                 document.getElementById('dadosProduto').innerHTML = '';
+                document.getElementById('productForm').reset();
             }
+        }
+
+        function alternarVisibilidadeComentario(produto, index) {
+            var produtoRef = database.ref('produtos/' + produto);
+            produtoRef.once('value', function(snapshot) {
+                var data = snapshot.val();
+                if (data && data.comentarios) {
+                    data.comentarios[index].visivel = !data.comentarios[index].visivel;
+                    produtoRef.set(data, function(error) {
+                        if (!error) {
+                            alert('Visibilidade do comentário alterada!');
+                            mostrarDadosSalvos();
+                        } else {
+                            alert('Erro ao alterar a visibilidade do comentário.');
+                        }
+                    });
+                }
+            });
         }
 
         function excluirComentario(produto, index) {
@@ -245,6 +290,58 @@
                         } else {
                             alert('Erro ao excluir o comentário.');
                         }
+                    });
+                }
+            });
+        }
+
+        function editarComentario(produto, index) {
+            var comentarioEdit = prompt('Digite o novo texto do comentário:');
+            if (comentarioEdit !== null) {
+                var produtoRef = database.ref('produtos/' + produto);
+                produtoRef.once('value', function(snapshot) {
+                    var data = snapshot.val();
+                    if (data && data.comentarios) {
+                        data.comentarios[index].texto = comentarioEdit;
+                        produtoRef.set(data, function(error) {
+                            if (!error) {
+                                alert('Comentário editado com sucesso!');
+                                mostrarDadosSalvos();
+                            } else {
+                                alert('Erro ao editar o comentário.');
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        function atualizarComentariosAdmin(produto) {
+            var comentariosAdmin = document.getElementById('comentariosAdmin');
+            comentariosAdmin.innerHTML = '';
+
+            if (!produto) return;
+
+            var produtoRef = database.ref('produtos/' + produto);
+            produtoRef.once('value', function(snapshot) {
+                var data = snapshot.val();
+                if (data && data.comentarios) {
+                    var comentarios = data.comentarios;
+                    comentarios.forEach(function(comentario, index) {
+                        var div = document.createElement('div');
+                        div.classList.add('comentario-item');
+                        div.innerHTML = `
+                            <div class="comentario-header">
+                                <span class="date">${comentario.data}</span>
+                                <span class="comentario-visibility" onclick="alternarVisibilidadeComentario('${produto}', ${index})">
+                                    ${comentario.visivel ? '👁️' : '🔒'}
+                                </span>
+                                <span class="comentario-edit" onclick="editarComentario('${produto}', ${index})">Editar</span>
+                                <span class="comentario-delete" onclick="excluirComentario('${produto}', ${index})">Excluir</span>
+                            </div>
+                            <div class="comentario-body">${comentario.texto}</div>
+                        `;
+                        comentariosAdmin.appendChild(div);
                     });
                 }
             });
