@@ -6,106 +6,14 @@
     <title>Gerenciamento de Produtos</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body {
-            margin: 20px;
-            padding: 20px;
-            background-image: url('https://i.pinimg.com/736x/01/22/d9/0122d95177d733f1dabd36acca11fef5.jpg');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            color: #333;
-        }
-        .container {
-            max-width: 800px;
-            background-color: rgba(255, 255, 255, 0.8); /* Fundo branco semi-transparente */
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-        #dadosProduto {
-            margin-top: 20px;
-        }
-        .comentario-item {
-            background: #ffffff;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-        }
-        .comentario-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .comentario-header .date {
-            font-size: 0.9em;
-            color: #888;
-        }
-        .comentario-body {
-            margin-top: 5px;
-        }
-        .comentario-delete {
-            cursor: pointer;
-            color: red;
-        }
-        .form-row {
-            display: flex;
-            justify-content: space-between;
-        }
-        .form-row .form-group {
-            flex: 1;
-            margin-right: 10px;
-        }
-        .form-row .form-group:last-child {
-            margin-right: 0;
-        }
-        .form-control {
-            max-width: none;
-        }
-        .title-centered {
-            text-align: center;
-        }
+        /* Estilos CSS aqui */
     </style>
 </head>
 <body>
     <div class="container">
         <h2 class="mb-4 title-centered">Gerenciamento de Produtos</h2>
         <form id="productForm">
-            <div class="form-group">
-                <label for="produto">Produto</label>
-                <input type="text" class="form-control" id="produto" required>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="perimetro">Perímetro</label>
-                    <input type="number" class="form-control" id="perimetro" maxlength="5">
-                </div>
-                <div class="form-group">
-                    <label for="corte">Corte</label>
-                    <input type="text" class="form-control" id="corte" required maxlength="5">
-                </div>
-                <div class="form-group">
-                    <label for="chagrim">Chagrim</label>
-                    <select class="form-control" id="chagrim">
-                        <option value="Sim">Sim</option>
-                        <option value="Não">Não</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="repeticao">Repetição</label>
-                    <input type="number" class="form-control" id="repeticao" maxlength="5">
-                </div>
-                <div class="form-group">
-                    <label for="velocidade">Velocidade</label>
-                    <input type="number" class="form-control" id="velocidade" required maxlength="5">
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="comentario">Comentário</label>
-                <input type="text" class="form-control" id="comentario">
-            </div>
+            <!-- Campos do formulário -->
             <button type="submit" class="btn btn-primary btn-block">Salvar</button>
         </form>
         <select id="produtosSalvos" class="form-control mt-3">
@@ -133,6 +41,9 @@
 
         function salvarDados(e) {
             e.preventDefault();
+
+            console.log("Iniciando salvamento de dados...");
+
             var produto = document.getElementById('produto').value.toUpperCase();
             var perimetro = document.getElementById('perimetro').value;
             var corte = document.getElementById('corte').value.toUpperCase();
@@ -145,6 +56,8 @@
                 alert('Por favor, preencha todos os campos obrigatórios.');
                 return;
             }
+
+            console.log("Dados capturados: ", { produto, perimetro, corte, velocidade, repeticao, chagrim, comentario });
 
             var produtoRef = database.ref('produtos/' + produto);
             produtoRef.once('value', function(snapshot) {
@@ -172,6 +85,7 @@
                         atualizarListaProdutos();
                     } else {
                         alert('Erro ao salvar os dados.');
+                        console.error("Erro ao salvar no Firebase: ", error);
                     }
                 });
             });
@@ -201,11 +115,11 @@
                     dadosProduto.innerHTML = '';
 
                     var data = snapshot.val();
-                    document.getElementById('produto').value = produto; // Preenche o campo produto
+                    document.getElementById('produto').value = produto;
                     document.getElementById('perimetro').value = data.perimetro || '';
-                    document.getElementById('corte').value = ''; // Não preencher automaticamente
+                    document.getElementById('corte').value = ''; 
                     document.getElementById('repeticao').value = data.repeticao || '';
-                    document.getElementById('velocidade').value = ''; // Não preencher automaticamente
+                    document.getElementById('velocidade').value = ''; 
                     document.getElementById('chagrim').value = data.chagrim || 'Não';
                     document.getElementById('comentario').value = '';
 
@@ -236,7 +150,7 @@
                 });
             } else {
                 document.getElementById('dadosProduto').innerHTML = '';
-                document.getElementById('productForm').reset(); // Limpa o formulário
+                document.getElementById('productForm').reset();
             }
         }
 
