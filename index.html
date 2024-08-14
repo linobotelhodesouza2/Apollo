@@ -3,129 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulário de Produtos</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-database.js"></script>
+    <title>LINO</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
     <style>
-        .dropdown-menu {
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .app-container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 15px;
+        }
+        @media (min-width: 768px) {
+            .app-container {
+                max-width: 750px;
+            }
+        }
+        .product-image {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .form-control, .form-select, .btn {
+            border-radius: 8px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+        #produtoDetalhes {
+            display: none;
+        }
+        .comment-list {
             max-height: 300px;
             overflow-y: auto;
+        }
+        #successMessage {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+        /* Estilos adicionais para dispositivos móveis */
+        @media (max-width: 576px) {
+            .produto-detalhes-mobile {
+                display: flex;
+                flex-direction: column-reverse;
+            }
+            .product-image {
+                width: 100px;
+                height: 100px;
+                margin-bottom: 15px;
+                align-self: center;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center">Cadastro de Produtos</h1>
-        <form id="produtoForm">
-            <div class="form-group">
-                <label for="produto">Produto:</label>
-                <input type="text" class="form-control" id="produto" required>
+    <div class="app-container mt-4">
+        <h2 class="mb-4 text-center">APOLLO</h2>
+        <div id="successMessage" class="alert alert-success" role="alert">
+            Dados salvos com sucesso!
+        </div>
+        <form id="produtoForm" class="mb-4">
+            <div class="row mb-3">
+                <div class="col">
+                    <input type="text" class="form-control" id="produto" placeholder="Produto" required>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="perimetro">Perímetro:</label>
-                <input type="text" class="form-control" id="perimetro" required>
+            <div class="row mb-3">
+                <div class="col">
+                    <input type="number" class="form-control" id="perimetro" placeholder="Perímetro" required>
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control" id="corte" placeholder="Corte" required>
+                </div>
+                <div class="col">
+                    <select class="form-select" id="chagrim">
+                        <option value="">Chagrim</option>
+                        <option value="sim">Sim</option>
+                        <option value="nao">Não</option>
+                    </select>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="corte">Corte:</label>
-                <input type="text" class="form-control" id="corte" required>
+            <div class="row mb-3">
+                <div class="col">
+                    <input type="number" class="form-control" id="repeticao" placeholder="Repetição" required>
+                </div>
+                <div class="col">
+                    <input type="number" class="form-control" id="velocidade" placeholder="Velocidade" required>
+                </div>
+                <div class="col">
+                    <input type="file" class="form-control" id="imagemProduto" accept="image/jpeg">
+                </div>
             </div>
-            <div class="form-group">
-                <label for="velocidade">Velocidade:</label>
-                <input type="text" class="form-control" id="velocidade" required>
+            <div class="row mb-3">
+                <div class="col">
+                    <textarea class="form-control" id="comentario" rows="3" placeholder="Comentário"></textarea>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="chagrim">Chagrim:</label>
-                <input type="text" class="form-control" id="chagrim" required>
+            <div class="row">
+                <div class="col">
+                    <button type="submit" class="btn btn-primary w-100">Salvar Dados</button>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="repeticao">Repetição:</label>
-                <input type="text" class="form-control" id="repeticao" required>
-            </div>
-            <div class="form-group">
-                <label for="comentario">Comentário:</label>
-                <textarea class="form-control" id="comentario"></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary">Salvar</button>
         </form>
 
-        <div id="successMessage" class="alert alert-success mt-3" style="display:none;">
-            Produto salvo com sucesso!
-        </div>
-
-        <h2 class="mt-5">Produtos Salvos</h2>
-        <div class="dropdown">
-            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Selecione um Produto
+        <div class="dropdown mb-3">
+            <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                Produtos Salvos
             </button>
-            <div class="dropdown-menu" id="produtosSalvos" aria-labelledby="dropdownMenuButton">
-            </div>
+            <ul class="dropdown-menu w-100" id="produtosSalvos" aria-labelledby="dropdownMenuButton">
+            </ul>
         </div>
 
-        <div id="produtoDetalhes" style="display:none;" class="mt-5">
+        <div id="produtoDetalhes" class="mt-4">
             <h3>Detalhes do Produto</h3>
-            <p><strong>Nome:</strong> <span id="detNome"></span></p>
-            <p><strong>Perímetro:</strong> <span id="detPerimetro"></span></p>
-            <p><strong>Corte:</strong> <input type="text" id="detCorte"></p>
-            <p><strong>Velocidade:</strong> <input type="text" id="detVelocidade"></p>
-            <p><strong>Chagrim:</strong> <span id="detChagrim"></span></p>
-            <p><strong>Repetição:</strong> <span id="detRepeticao"></span></p>
-            <button id="salvarEdicao" class="btn btn-success">Salvar Edição</button>
-            <button id="excluirProduto" class="btn btn-danger">Excluir Produto</button>
-            <h4>Comentários</h4>
-            <div id="comentariosList"></div>
-            <form id="novoComentarioForm">
-                <div class="form-group">
-                    <label for="novoComentario">Novo Comentário:</label>
-                    <input type="text" class="form-control" id="novoComentario" required>
+            <div class="row produto-detalhes-mobile">
+                <div class="col-md-8">
+                    <p><strong>Produto:</strong> <span id="detNome"></span></p>
+                    <p><strong>Perímetro:</strong> <span id="detPerimetro"></span></p>
+                    <p><strong>Corte:</strong> <input type="text" id="detCorte" class="form-control"></p>
+                    <p><strong>Chagrim:</strong> <span id="detChagrim"></span></p>
+                    <p><strong>Repetição:</strong> <span id="detRepeticao"></span></p>
+                    <p><strong>Velocidade:</strong> <input type="number" id="detVelocidade" class="form-control"></p>
+                    <button id="salvarEdicao" class="btn btn-primary mt-2">Salvar Edição</button>
+                    <button id="excluirProduto" class="btn btn-danger mt-2 ms-2">Excluir Produto</button>
                 </div>
-                <button type="submit" class="btn btn-primary">Adicionar Comentário</button>
-            </form>
+                <div class="col-md-4">
+                    <img id="detImagem" src="" alt="Imagem do Produto" class="product-image">
+                </div>
+            </div>
+            <div class="mt-4">
+                <h4>Comentários</h4>
+                <div id="comentariosList" class="comment-list mb-3"></div>
+                <form id="novoComentarioForm">
+                    <div class="mb-3">
+                        <textarea class="form-control" id="novoComentario" rows="3" placeholder="Adicionar novo comentário" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Adicionar Comentário</button>
+                </form>
+            </div>
         </div>
     </div>
 
     <script>
-        // Configuração do Firebase
-        var firebaseConfig = {
-            apiKey: "AIzaSyB0DfSwB68tf7FagfGSLyOszQRduYoGiak",
-            authDomain: "lino-29b0b.firebaseapp.com",
-            databaseURL: "https://lino-29b0b-default-rtdb.firebaseio.com",
-            projectId: "lino-29b0b",
-            storageBucket: "lino-29b0b.appspot.com",
-            messagingSenderId: "731949645073",
-            appId: "1:731949645073:web:4eaf9011174f08473ee0b0"
-        };
+        let produtoAtual = null;
+        let produtoIndex = null;
 
-        // Inicialização do Firebase
-        firebase.initializeApp(firebaseConfig);
-        var db = firebase.database();
-
-        // Evento de envio do formulário
-        document.getElementById('produtoForm').addEventListener('submit', function (e) {
+        document.getElementById('produtoForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            const imageFile = document.getElementById('imagemProduto').files[0];
+            const reader = new FileReader();
 
-            var produto = {
-                nome: document.getElementById('produto').value,
-                perimetro: document.getElementById('perimetro').value,
-                corte: document.getElementById('corte').value,
-                velocidade: document.getElementById('velocidade').value,
-                chagrim: document.getElementById('chagrim').value,
-                repeticao: document.getElementById('repeticao').value,
-                comentario: document.getElementById('comentario').value,
-                comentarios: [] // Inicializa a lista de comentários
+            reader.onload = function(event) {
+                const produto = {
+                    nome: document.getElementById('produto').value,
+                    perimetro: document.getElementById('perimetro').value,
+                    corte: document.getElementById('corte').value,
+                    chagrim: document.getElementById('chagrim').value,
+                    repeticao: document.getElementById('repeticao').value,
+                    velocidade: document.getElementById('velocidade').value,
+                    imagem: event.target.result,
+                    comentarios: []
+                };
+
+                const comentario = document.getElementById('comentario').value;
+                if (comentario) {
+                    produto.comentarios.push({
+                        texto: comentario,
+                        data: new Date().toLocaleString()
+                    });
+                }
+
+                let produtos = JSON.parse(localStorage.getItem('produtos')) || [];
+                produtos.push(produto);
+                localStorage.setItem('produtos', JSON.stringify(produtos));
+
+                atualizarMenuSuspenso();
+                limparCampos();
+                mostrarMensagemSucesso();
             };
 
-            // Salvando produto no Firebase
-            db.ref('produtos').push(produto).then(() => {
-                mostrarMensagemSucesso();
-                atualizarProdutosSalvos();
-                document.getElementById('produtoForm').reset();
-            }).catch(error => {
-                console.error('Erro ao salvar produto:', error);
-            });
+            if (imageFile) {
+                reader.readAsDataURL(imageFile);
+            } else {
+                reader.onload({ target: { result: null } });
+            }
         });
 
-        // Função para exibir mensagem de sucesso
+        function limparCampos() {
+            document.getElementById('produtoForm').reset();
+            document.getElementById('imagemProduto').value = '';
+        }
+
         function mostrarMensagemSucesso() {
             const successMessage = document.getElementById('successMessage');
             successMessage.style.display = 'block';
@@ -134,111 +218,102 @@
             }, 3000);
         }
 
-        // Função para atualizar a lista de produtos salvos no dropdown
-        function atualizarProdutosSalvos() {
-            const produtosSalvosList = document.getElementById('produtosSalvos');
-            produtosSalvosList.innerHTML = '';
+        function atualizarMenuSuspenso() {
+            const produtos = JSON.parse(localStorage.getItem('produtos')) || [];
+            const dropdownMenu = document.getElementById('produtosSalvos');
+            dropdownMenu.innerHTML = '';
 
-            db.ref('produtos').once('value').then(snapshot => {
-                snapshot.forEach(childSnapshot => {
-                    const produto = childSnapshot.val();
-                    const li = document.createElement('a');
-                    li.className = 'dropdown-item';
-                    li.textContent = produto.nome;
-                    li.href = '#';
-                    li.onclick = () => mostrarDetalhesProduto(childSnapshot.key, produto);
-                    produtosSalvosList.appendChild(li);
+            if (produtos.length === 0) {
+                const li = document.createElement('li');
+                li.textContent = 'Nenhum produto salvo';
+                dropdownMenu.appendChild(li);
+            } else {
+                produtos.forEach((produto, index) => {
+                    const li = document.createElement('li');
+                    const button = document.createElement('button');
+                    button.className = 'dropdown-item';
+                    button.textContent = produto.nome;
+                    button.onclick = () => mostrarDetalhesProduto(index);
+                    li.appendChild(button);
+                    dropdownMenu.appendChild(li);
                 });
-            }).catch(error => {
-                console.error('Erro ao atualizar produtos salvos:', error);
-            });
+            }
         }
 
-        // Função para mostrar detalhes do produto selecionado
-        function mostrarDetalhesProduto(key, produto) {
+        function mostrarDetalhesProduto(index) {
+            const produtos = JSON.parse(localStorage.getItem('produtos'));
+            const produto = produtos[index];
+
             produtoAtual = produto;
-            produtoIndex = key;
+            produtoIndex = index;
+
             document.getElementById('detNome').textContent = produto.nome;
             document.getElementById('detPerimetro').textContent = produto.perimetro;
             document.getElementById('detCorte').value = produto.corte;
-            document.getElementById('detVelocidade').value = produto.velocidade;
             document.getElementById('detChagrim').textContent = produto.chagrim;
             document.getElementById('detRepeticao').textContent = produto.repeticao;
+            document.getElementById('detVelocidade').value = produto.velocidade;
+            document.getElementById('detImagem').src = produto.imagem || '';
+
+            atualizarListaComentarios(produto.comentarios);
+
             document.getElementById('produtoDetalhes').style.display = 'block';
-            atualizarComentarios(produto.comentarios || []);
         }
 
-        // Função para atualizar a lista de comentários
-        function atualizarComentarios(comentarios) {
+        function atualizarListaComentarios(comentarios) {
             const comentariosList = document.getElementById('comentariosList');
             comentariosList.innerHTML = '';
 
-            if (comentarios.length > 0) {
-                comentarios.forEach((comentario, index) => {
-                    const p = document.createElement('p');
-                    p.textContent = `${index + 1}. ${comentario}`;
-                    comentariosList.appendChild(p);
-                });
+            if (comentarios.length === 0) {
+                comentariosList.textContent = 'Nenhum comentário adicionado.';
             } else {
-                comentariosList.innerHTML = '<p>Nenhum comentário encontrado.</p>';
+                comentarios.forEach((comentario, index) => {
+                    const comentarioDiv = document.createElement('div');
+                    comentarioDiv.className = 'mb-2';
+                    comentarioDiv.textContent = ${comentario.texto} (${comentario.data});
+                    comentariosList.appendChild(comentarioDiv);
+                });
             }
         }
 
-        // Evento de envio do formulário de comentário
-        document.getElementById('novoComentarioForm').addEventListener('submit', function (e) {
+        document.getElementById('salvarEdicao').addEventListener('click', function() {
+            const produtos = JSON.parse(localStorage.getItem('produtos'));
+            produtos[produtoIndex].corte = document.getElementById('detCorte').value;
+            produtos[produtoIndex].velocidade = document.getElementById('detVelocidade').value;
+
+            localStorage.setItem('produtos', JSON.stringify(produtos));
+            mostrarMensagemSucesso();
+        });
+
+        document.getElementById('excluirProduto').addEventListener('click', function() {
+            const produtos = JSON.parse(localStorage.getItem('produtos'));
+            produtos.splice(produtoIndex, 1);
+
+            localStorage.setItem('produtos', JSON.stringify(produtos));
+            atualizarMenuSuspenso();
+            document.getElementById('produtoDetalhes').style.display = 'none';
+        });
+
+        document.getElementById('novoComentarioForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
-            if (produtoAtual && produtoIndex) {
-                const novoComentario = document.getElementById('novoComentario').value;
-                produtoAtual.comentarios = produtoAtual.comentarios || [];
-                produtoAtual.comentarios.push(novoComentario);
+            const novoComentario = document.getElementById('novoComentario').value;
+            const comentario = {
+                texto: novoComentario,
+                data: new Date().toLocaleString()
+            };
 
-                // Atualiza o Firebase com o novo comentário
-                db.ref('produtos/' + produtoIndex).update({
-                    comentarios: produtoAtual.comentarios
-                }).then(() => {
-                    atualizarComentarios(produtoAtual.comentarios);
-                    document.getElementById('novoComentario').value = '';
-                }).catch(error => {
-                    console.error('Erro ao adicionar comentário:', error);
-                });
-            }
+            produtoAtual.comentarios.push(comentario);
+
+            const produtos = JSON.parse(localStorage.getItem('produtos'));
+            produtos[produtoIndex] = produtoAtual;
+            localStorage.setItem('produtos', JSON.stringify(produtos));
+
+            atualizarListaComentarios(produtoAtual.comentarios);
+            document.getElementById('novoComentario').value = '';
         });
 
-        // Evento de salvar edição do produto
-        document.getElementById('salvarEdicao').addEventListener('click', function () {
-            if (produtoIndex) {
-                const produtoAtualizado = {
-                    ...produtoAtual,
-                    corte: document.getElementById('detCorte').value,
-                    velocidade: document.getElementById('detVelocidade').value
-                };
-
-                db.ref('produtos/' + produtoIndex).update(produtoAtualizado).then(() => {
-                    mostrarMensagemSucesso();
-                }).catch(error => {
-                    console.error('Erro ao atualizar produto:', error);
-                });
-            }
-        });
-
-        // Evento de excluir produto
-        document.getElementById('excluirProduto').addEventListener('click', function () {
-            if (produtoIndex) {
-                db.ref('produtos/' + produtoIndex).remove().then(() => {
-                    produtoAtual = null;
-                    produtoIndex = null;
-                    document.getElementById('produtoDetalhes').style.display = 'none';
-                    atualizarProdutosSalvos();
-                    mostrarMensagemSucesso();
-                }).catch(error => {
-                    console.error('Erro ao excluir produto:', error);
-                });
-            }
-        });
-
-        // Inicializa a lista de produtos salvos
-        atualizarProdutosSalvos();
+        atualizarMenuSuspenso();
     </script>
 </body>
 </html>
