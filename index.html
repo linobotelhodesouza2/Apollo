@@ -56,7 +56,6 @@
             transform: translateX(-50%);
             z-index: 1000;
         }
-        /* Estilos adicionais para dispositivos móveis */
         @media (max-width: 576px) {
             .produto-detalhes-mobile {
                 display: flex;
@@ -70,6 +69,10 @@
             }
         }
     </style>
+    <!-- Firebase App (Core SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js"></script>
+    <!-- Firebase Database -->
+    <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-database.js"></script>
 </head>
 <body>
     <div class="app-container mt-4">
@@ -160,6 +163,21 @@
     </div>
 
     <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBi51utf4KfB3JT4rtXiL1RXlQfbKaif1Q",
+            authDomain: "lino-b.firebaseapp.com",
+            databaseURL: "https://lino-b-default-rtdb.firebaseio.com",
+            projectId: "lino-b",
+            storageBucket: "lino-b.appspot.com",
+            messagingSenderId: "1003289071819",
+            appId: "1:1003289071819:web:af41548d741cc6ad644b4e"
+        };
+        
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.database(app);
+
         let produtoAtual = null;
         let produtoIndex = null;
 
@@ -178,37 +196,22 @@
                     repeticao: document.getElementById('repeticao').value,
                     velocidade: document.getElementById('velocidade').value,
                     imagem: event.target.result,
-                    comentarios: []
+                    comentarios: [],
+                    comentario: document.getElementById('comentario').value
                 };
 
-                const comentario = document.getElementById('comentario').value;
-                if (comentario) {
-                    produto.comentarios.push({
-                        texto: comentario,
-                        data: new Date().toLocaleString()
-                    });
-                }
-
-                let produtos = JSON.parse(localStorage.getItem('produtos')) || [];
-                produtos.push(produto);
-                localStorage.setItem('produtos', JSON.stringify(produtos));
-
-                atualizarMenuSuspenso();
-                limparCampos();
+                db.ref('produtos').push(produto);
                 mostrarMensagemSucesso();
+                atualizarProdutosSalvos();
+                document.getElementById('produtoForm').reset();
             };
 
             if (imageFile) {
                 reader.readAsDataURL(imageFile);
             } else {
-                reader.onload({ target: { result: null } });
+                reader.onload();
             }
         });
-
-        function limparCampos() {
-            document.getElementById('produtoForm').reset();
-            document.getElementById('imagemProduto').value = '';
-        }
 
         function mostrarMensagemSucesso() {
             const successMessage = document.getElementById('successMessage');
@@ -218,102 +221,92 @@
             }, 3000);
         }
 
-        function atualizarMenuSuspenso() {
-            const produtos = JSON.parse(localStorage.getItem('produtos')) || [];
-            const dropdownMenu = document.getElementById('produtosSalvos');
-            dropdownMenu.innerHTML = '';
+        function atualizarProdutosSalvos() {
+            const produtosSalvosList = document.getElementById('produtosSalvos');
+            produtosSalvosList.innerHTML = '';
 
-            if (produtos.length === 0) {
-                const li = document.createElement('li');
-                li.textContent = 'Nenhum produto salvo';
-                dropdownMenu.appendChild(li);
-            } else {
-                produtos.forEach((produto, index) => {
+            db.ref('produtos').once('value').then(snapshot => {
+                snapshot.forEach(childSnapshot => {
+                    const produto = childSnapshot.val();
                     const li = document.createElement('li');
-                    const button = document.createElement('button');
-                    button.className = 'dropdown-item';
-                    button.textContent = produto.nome;
-                    button.onclick = () => mostrarDetalhesProduto(index);
-                    li.appendChild(button);
-                    dropdownMenu.appendChild(li);
+                    li.className = 'dropdown-item';
+                    li.textContent = produto.nome;
+                    li.onclick = () => mostrarDetalhesProduto(childSnapshot.key, produto);
+                    produtosSalvosList.appendChild(li);
                 });
-            }
+            });
         }
 
-        function mostrarDetalhesProduto(index) {
-            const produtos = JSON.parse(localStorage.getItem('produtos'));
-            const produto = produtos[index];
-
+        function mostrarDetalhesProduto(key, produto) {
             produtoAtual = produto;
-            produtoIndex = index;
-
+            produtoIndex = key;
             document.getElementById('detNome').textContent = produto.nome;
             document.getElementById('detPerimetro').textContent = produto.perimetro;
             document.getElementById('detCorte').value = produto.corte;
             document.getElementById('detChagrim').textContent = produto.chagrim;
             document.getElementById('detRepeticao').textContent = produto.repeticao;
             document.getElementById('detVelocidade').value = produto.velocidade;
-            document.getElementById('detImagem').src = produto.imagem || '';
-
-            atualizarListaComentarios(produto.comentarios);
-
+            document.getElementById('detImagem').src = produto.imagem || 'placeholder.jpg';
             document.getElementById('produtoDetalhes').style.display = 'block';
+            atualizarComentarios(produto.comentarios);
         }
 
-        function atualizarListaComentarios(comentarios) {
+        function atualizarComentarios(comentarios) {
             const comentariosList = document.getElementById('comentariosList');
             comentariosList.innerHTML = '';
 
-            if (comentarios.length === 0) {
-                comentariosList.textContent = 'Nenhum comentário adicionado.';
-            } else {
+            if (comentarios) {
                 comentarios.forEach((comentario, index) => {
-                    const comentarioDiv = document.createElement('div');
-                    comentarioDiv.className = 'mb-2';
-                    comentarioDiv.textContent = ${comentario.texto} (${comentario.data});
-                    comentariosList.appendChild(comentarioDiv);
+                    const p = document.createElement('p');
+                    p.textContent = `${index + 1}. ${comentario}`;
+                    comentariosList.appendChild(p);
                 });
             }
         }
-
-        document.getElementById('salvarEdicao').addEventListener('click', function() {
-            const produtos = JSON.parse(localStorage.getItem('produtos'));
-            produtos[produtoIndex].corte = document.getElementById('detCorte').value;
-            produtos[produtoIndex].velocidade = document.getElementById('detVelocidade').value;
-
-            localStorage.setItem('produtos', JSON.stringify(produtos));
-            mostrarMensagemSucesso();
-        });
-
-        document.getElementById('excluirProduto').addEventListener('click', function() {
-            const produtos = JSON.parse(localStorage.getItem('produtos'));
-            produtos.splice(produtoIndex, 1);
-
-            localStorage.setItem('produtos', JSON.stringify(produtos));
-            atualizarMenuSuspenso();
-            document.getElementById('produtoDetalhes').style.display = 'none';
-        });
 
         document.getElementById('novoComentarioForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
             const novoComentario = document.getElementById('novoComentario').value;
-            const comentario = {
-                texto: novoComentario,
-                data: new Date().toLocaleString()
-            };
 
-            produtoAtual.comentarios.push(comentario);
+            if (produtoAtual) {
+                if (!produtoAtual.comentarios) {
+                    produtoAtual.comentarios = [];
+                }
 
-            const produtos = JSON.parse(localStorage.getItem('produtos'));
-            produtos[produtoIndex] = produtoAtual;
-            localStorage.setItem('produtos', JSON.stringify(produtos));
+                produtoAtual.comentarios.push(novoComentario);
 
-            atualizarListaComentarios(produtoAtual.comentarios);
-            document.getElementById('novoComentario').value = '';
+                db.ref('produtos/' + produtoIndex).update(produtoAtual);
+                document.getElementById('novoComentario').value = '';
+                atualizarComentarios(produtoAtual.comentarios);
+            }
         });
 
-        atualizarMenuSuspenso();
+        document.getElementById('salvarEdicao').addEventListener('click', function() {
+            const corteEditado = document.getElementById('detCorte').value;
+            const velocidadeEditada = document.getElementById('detVelocidade').value;
+
+            if (produtoAtual) {
+                produtoAtual.corte = corteEditado;
+                produtoAtual.velocidade = velocidadeEditada;
+
+                db.ref('produtos/' + produtoIndex).update(produtoAtual);
+                mostrarMensagemSucesso();
+            }
+        });
+
+        document.getElementById('excluirProduto').addEventListener('click', function() {
+            if (produtoIndex) {
+                db.ref('produtos/' + produtoIndex).remove();
+                produtoAtual = null;
+                produtoIndex = null;
+                document.getElementById('produtoDetalhes').style.display = 'none';
+                atualizarProdutosSalvos();
+                mostrarMensagemSucesso();
+            }
+        });
+
+        atualizarProdutosSalvos();
     </script>
 </body>
 </html>
