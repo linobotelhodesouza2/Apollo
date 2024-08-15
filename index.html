@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LINO</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
         body {
             background-color: #f0f2f5;
@@ -58,14 +55,25 @@
             transform: translateX(-50%);
             z-index: 1000;
         }
-        @media (max-width: 576px) {
+        @media (max-width: 767px) {
+            .produto-detalhes-mobile {
+                display: flex;
+                flex-direction: row;
+            }
+            .product-image {
+                width: 100px;
+                height: 100px;
+                margin-right: 15px;
+            }
+        }
+        @media (min-width: 768px) {
             .produto-detalhes-mobile {
                 display: flex;
                 flex-direction: column-reverse;
             }
             .product-image {
-                width: 100px;
-                height: 100px;
+                width: 200px;
+                height: 200px;
                 margin-bottom: 15px;
                 align-self: center;
             }
@@ -73,8 +81,14 @@
     </style>
 </head>
 <body>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
     <div class="app-container mt-4">
-        <h2 class="mb-4 text-center">APOLLO 1</h2>
+        <h2 class="mb-4 text-center">APOLLO</h2>
+        <button id="logoutButton" class="btn btn-secondary mb-3">Logout</button>
         <div id="successMessage" class="alert alert-success" role="alert">
             Dados salvos com sucesso!
         </div>
@@ -133,6 +147,9 @@
         <div id="produtoDetalhes" class="mt-4">
             <h3>Detalhes do Produto</h3>
             <div class="row produto-detalhes-mobile">
+                <div class="col-md-4">
+                    <img id="detImagem" src="" alt="Imagem do Produto" class="product-image">
+                </div>
                 <div class="col-md-8">
                     <p><strong>Produto:</strong> <span id="detNome"></span></p>
                     <p><strong>Perímetro:</strong> <span id="detPerimetro"></span></p>
@@ -142,9 +159,6 @@
                     <p><strong>Velocidade:</strong> <input type="number" id="detVelocidade" class="form-control"></p>
                     <button id="salvarEdicao" class="btn btn-primary mt-2">Salvar Edição</button>
                     <button id="excluirProduto" class="btn btn-danger mt-2 ms-2">Excluir Produto</button>
-                </div>
-                <div class="col-md-4">
-                    <img id="detImagem" src="" alt="Imagem do Produto" class="product-image">
                 </div>
             </div>
             <div class="mt-4">
@@ -160,6 +174,7 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
     <script>
         // Initialize Firebase
         const firebaseConfig = {
@@ -173,55 +188,85 @@
         };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
+        const auth = firebase.auth();
+        console.log("Firebase inicializado");
+
+        // Check authentication state
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                // User is signed in
+                console.log("User is signed in:", user.email);
+            } else {
+                // No user is signed in, redirect to login page
+                window.location.href = 'login.html';
+            }
+        });
+
+        // Logout functionality
+        document.getElementById('logoutButton').addEventListener('click', function() {
+            auth.signOut().then(() => {
+                window.location.href = 'login.html';
+            }).catch((error) => {
+                console.error("Error signing out:", error);
+            });
+        });
 
         let produtoAtual = null;
         let produtoKey = null;
 
-        document.getElementById('produtoForm').addEventListener('submit', function(e) {
+        document.getElementById('produtoForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const imageFile = document.getElementById('imagemProduto').files[0];
-            const reader = new FileReader();
-
-            reader.onload = function(event) {
-                const produto = {
-                    nome: document.getElementById('produto').value,
-                    perimetro: document.getElementById('perimetro').value,
-                    corte: document.getElementById('corte').value,
-                    chagrim: document.getElementById('chagrim').value,
-                    repeticao: document.getElementById('repeticao').value,
-                    velocidade: document.getElementById('velocidade').value,
-                    imagem: event.target.result,
-                    comentarios: []
-                };
-
-                const comentario = document.getElementById('comentario').value;
-                if (comentario) {
-                    produto.comentarios.push({
-                        texto: comentario,
-                        data: new Date().toLocaleString()
-                    });
-                }
-
-                // Save to Firebase
-                const newProdutoRef = database.ref('produtos').push();
-                newProdutoRef.set(produto)
-                    .then(() => {
-                        atualizarMenuSuspenso();
-                        limparCampos();
-                        mostrarMensagemSucesso();
-                    })
-                    .catch((error) => {
-                        console.error("Error saving data: ", error);
-                    });
-            };
+            let imageDataUrl = null;
 
             if (imageFile) {
-                reader.readAsDataURL(imageFile);
-            } else {
-                reader.onload({ target: { result: null } });
+                imageDataUrl = await readFileAsDataURL(imageFile);
+            }
+
+            const produto = {
+                nome: document.getElementById('produto').value,
+                perimetro: document.getElementById('perimetro').value,
+                chagrim: document.getElementById('chagrim').value,
+                repeticao: document.getElementById('repeticao').value,
+                velocidade: document.getElementById('velocidade').value,
+                imagem: imageDataUrl,
+                comentarios: []
+            };
+
+            if (!produto.nome || !produto.perimetro || !produto.corte || !produto.repeticao || !produto.velocidade) {
+                alert("Por favor, preencha todos os campos obrigatórios.");
+                return;
+            }
+
+            const comentario = document.getElementById('comentario').value;
+            if (comentario) {
+                produto.comentarios.push({
+                    texto: comentario,
+                    data: new Date().toLocaleString()
+                });
+            }
+
+            try {
+                await database.ref('produtos').push(produto);
+                console.log("Dados salvos com sucesso!");
+                mostrarMensagemSucesso();
+                limparCampos();
+                atualizarMenuSuspenso();
+            } catch (error) {
+                console.error("Erro ao salvar dados: ", error.code, error.message);
+                alert("Erro ao salvar dados: " + error.message);
             }
         });
+
+        function readFileAsDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => resolve(event.target.result);
+                reader.onerror = (error) => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
 
         function limparCampos() {
             document.getElementById('produtoForm').reset();
@@ -261,7 +306,7 @@
                     }
                 })
                 .catch((error) => {
-                    console.error("Error fetching data: ", error);
+                    console.error("Erro ao buscar dados: ", error);
                 });
         }
 
@@ -287,7 +332,7 @@
                     }
                 })
                 .catch((error) => {
-                    console.error("Error fetching product details: ", error);
+                    console.error("Erro ao buscar detalhes do produto: ", error);
                 });
         }
 
@@ -318,7 +363,7 @@
                     mostrarMensagemSucesso();
                 })
                 .catch((error) => {
-                    console.error("Error updating data: ", error);
+                    console.error("Erro ao atualizar dados: ", error);
                 });
         });
 
@@ -329,7 +374,7 @@
                     document.getElementById('produtoDetalhes').style.display = 'none';
                 })
                 .catch((error) => {
-                    console.error("Error deleting product: ", error);
+                    console.error("Erro ao excluir produto: ", error);
                 });
         });
 
@@ -355,7 +400,7 @@
                 document.getElementById('novoComentario').value = '';
             })
             .catch((error) => {
-                console.error("Error adding comment: ", error);
+                console.error("Erro ao adicionar comentário: ", error);
             });
         });
 
